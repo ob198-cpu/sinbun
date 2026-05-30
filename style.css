@@ -52,6 +52,12 @@ button.primary {
   background: var(--accent);
 }
 
+button.active {
+  color: #fff;
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
 button.primary:hover {
   background: var(--accent-strong);
 }
@@ -211,7 +217,7 @@ label {
 
 .control-switch {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 14px;
 }
@@ -534,6 +540,14 @@ input[type="color"] {
 
 .area-tabs {
   flex: 1 1 320px;
+}
+
+.side-area-tabs {
+  margin-top: 12px;
+}
+
+#areaTabsHidden {
+  display: none;
 }
 
 .area-tab {

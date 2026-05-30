@@ -58,12 +58,16 @@ let pendingPlaceStopId = "";
 let currentFilter = "all";
 let currentAreaId = "all";
 let showNameLabels = localStorage.getItem(LABEL_STORAGE) !== "false";
+let drawLineMode = false;
+let areaAssignMode = false;
 let map;
 let geocoder;
 let bounds;
 let mapProjection;
 let markers = new Map();
 let routeLine;
+let manualLine;
+let manualLinePath = [];
 let openInfoWindow;
 
 const $ = selector => document.querySelector(selector);
@@ -256,6 +260,17 @@ function setStopPosition(id, latLng) {
   syncMap();
 }
 
+function assignStopArea(id, areaId) {
+  const stop = stops.find(item => item.id === id);
+  if (!stop || !areaId) return;
+  stop.areaId = areaId;
+  stop.updatedAt = new Date().toISOString();
+  areaAssignMode = false;
+  saveState();
+  render();
+  syncMap();
+}
+
 function moveStopPosition(id, latLng) {
   const stop = stops.find(item => item.id === id);
   if (!stop) return;
@@ -343,6 +358,13 @@ function renderAreaControls() {
   const previous = select.value || DEFAULT_AREA_ID;
   select.innerHTML = areas.map(area => `<option value="${escapeHtml(area.id)}">${escapeHtml(area.name)}</option>`).join("");
   select.value = areas.some(area => area.id === previous) ? previous : (areas[0]?.id || DEFAULT_AREA_ID);
+
+  const assignSelect = $("#areaAssignSelect");
+  if (assignSelect) {
+    const assignPrevious = assignSelect.value || (areas[0]?.id || DEFAULT_AREA_ID);
+    assignSelect.innerHTML = areas.map(area => `<option value="${escapeHtml(area.id)}">${escapeHtml(area.name)}</option>`).join("");
+    assignSelect.value = areas.some(area => area.id === assignPrevious) ? assignPrevious : (areas[0]?.id || DEFAULT_AREA_ID);
+  }
 
   const tabs = $("#areaTabs");
   tabs.innerHTML = "";
@@ -572,6 +594,10 @@ window.initMap = function initMap() {
   setupMapProjection();
   setupMapDrop();
   map.addListener("click", event => {
+    if (drawLineMode) {
+      addManualLinePoint(event.latLng);
+      return;
+    }
     if (pendingPlaceStopId) {
       setStopPosition(pendingPlaceStopId, event.latLng);
       return;
@@ -587,6 +613,24 @@ window.initMap = function initMap() {
   });
   syncMap({ fit: true });
 };
+
+function addManualLinePoint(latLng) {
+  manualLinePath.push({ lat: latLng.lat(), lng: latLng.lng() });
+  drawManualLine();
+}
+
+function drawManualLine() {
+  if (!map || !window.google?.maps) return;
+  if (manualLine) manualLine.setMap(null);
+  if (manualLinePath.length < 2) return;
+  manualLine = new google.maps.Polyline({
+    path: manualLinePath,
+    map,
+    strokeColor: "#bd3d32",
+    strokeOpacity: 0.95,
+    strokeWeight: 4
+  });
+}
 
 function setupMapProjection() {
   const overlay = new google.maps.OverlayView();
@@ -673,6 +717,10 @@ function syncMap(options = {}) {
     });
     const info = new google.maps.InfoWindow({ content: markerInfoHtml(stop) });
     marker.addListener("click", () => {
+      if (areaAssignMode) {
+        assignStopArea(stop.id, $("#areaAssignSelect").value);
+        return;
+      }
       if (openInfoWindow) openInfoWindow.close();
       openInfoWindow = info;
       info.open({ anchor: marker, map });
@@ -686,6 +734,7 @@ function syncMap(options = {}) {
   });
 
   drawRoute();
+  drawManualLine();
   if (shouldFit && !bounds.isEmpty()) map.fitBounds(bounds, 64);
 }
 
@@ -993,13 +1042,29 @@ function bindEvents() {
       syncMap();
     });
   });
-  $("#fitBtn").addEventListener("click", () => syncMap({ fit: true }));
-  $("#routeBtn").addEventListener("click", syncMap);
   $("#todayBtn").addEventListener("click", () => {
-    currentFilter = "pending";
+    currentFilter = currentFilter === "pending" ? "all" : "pending";
     $$(".filter").forEach(item => item.classList.remove("active"));
+    $("#todayBtn").classList.toggle("active", currentFilter === "pending");
     renderList();
     syncMap();
+  });
+  $("#drawLineBtn").addEventListener("click", () => {
+    drawLineMode = !drawLineMode;
+    areaAssignMode = false;
+    $("#drawLineBtn").classList.toggle("active", drawLineMode);
+    $("#areaAssignBtn").classList.remove("active");
+    if (!drawLineMode && manualLinePath.length) {
+      manualLinePath = [];
+      if (manualLine) manualLine.setMap(null);
+      manualLine = null;
+    }
+  });
+  $("#areaAssignBtn").addEventListener("click", () => {
+    areaAssignMode = !areaAssignMode;
+    drawLineMode = false;
+    $("#areaAssignBtn").classList.toggle("active", areaAssignMode);
+    $("#drawLineBtn").classList.remove("active");
   });
   $("#nameLabelBtn").addEventListener("click", () => {
     showNameLabels = !showNameLabels;

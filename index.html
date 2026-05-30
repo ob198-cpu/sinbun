@@ -26,6 +26,7 @@
 
       <nav class="control-switch" aria-label="操作切替">
         <button type="button" class="control-tab active" data-control-target="roster">名簿</button>
+        <button type="button" class="control-tab" data-control-target="areas">エリア</button>
         <button type="button" class="control-tab" data-control-target="new">新規登録</button>
         <button type="button" class="control-tab" data-control-target="settings">設定</button>
       </nav>
@@ -106,6 +107,17 @@
         </div>
       </section>
 
+      <section class="panel control-panel hidden" data-control-panel="areas">
+        <div class="panel-heading">
+          <h2>エリア指定</h2>
+        </div>
+        <label>対象エリア
+          <select id="areaAssignSelect"></select>
+        </label>
+        <p class="hint-text">「エリア指定」を押してから地図上のピンをクリックすると、その配達先のエリアを変更できます。</p>
+        <div id="areaTabs" class="area-tabs side-area-tabs" role="tablist" aria-label="エリア切替"></div>
+      </section>
+
       <section class="panel control-panel hidden" data-control-panel="settings">
         <div class="panel-heading">
           <h2>地図設定</h2>
@@ -165,9 +177,9 @@
           </div>
         </div>
         <div class="route-toolbar">
-          <button id="fitBtn" type="button" title="全配達先を表示">全体表示</button>
-          <button id="routeBtn" type="button" title="ルート線を更新">ルート更新</button>
           <button id="todayBtn" type="button" title="未完了だけ表示">未完了</button>
+          <button id="drawLineBtn" type="button" title="地図クリックで線を引く">線を引く</button>
+          <button id="areaAssignBtn" type="button" title="ピンをクリックしてエリア変更">エリア指定</button>
           <button id="nameLabelBtn" type="button" title="名前ラベルを切替">名前表示</button>
         </div>
       </section>
@@ -178,7 +190,7 @@
             <p class="eyebrow">Route Board</p>
             <h2>配達ルート</h2>
           </div>
-          <div id="areaTabs" class="area-tabs" role="tablist" aria-label="エリア切替"></div>
+          <div id="areaTabsHidden" class="area-tabs" role="tablist" aria-label="エリア切替"></div>
           <div class="filters" role="group" aria-label="状態フィルター">
             <button class="filter active" data-filter="all" type="button">全件</button>
             <button class="filter" data-filter="planned" type="button">予定</button>
