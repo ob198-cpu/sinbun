@@ -192,6 +192,12 @@ function ensureAreaByName(name) {
   return area.id;
 }
 
+function existingAreaIdByName(name) {
+  const cleaned = String(name || "").trim();
+  if (!cleaned) return areas[0]?.id || DEFAULT_AREA_ID;
+  return areas.find(area => area.name === cleaned)?.id || (areas[0]?.id || DEFAULT_AREA_ID);
+}
+
 function randomAreaColor() {
   const colors = ["#146c94", "#22835f", "#bd3d32", "#6a5acd", "#b36b00", "#2b6cb0", "#7c3aed"];
   return colors[areas.length % colors.length];
@@ -242,7 +248,7 @@ function stopFromRoster(item, position = {}) {
     orderNo: nextOrder(),
     customerName: item.name,
     address: item.address,
-    areaId: item.areaId || ensureAreaByName(item.areaName),
+    areaId: existingAreaIdByName(item.areaName || areaById(item.areaId).name),
     plannedTime: "",
     copies: item.copies || 1,
     status: "planned",
@@ -618,7 +624,7 @@ function parseRosterText(text) {
         name: cols[0].trim(),
         address: cols[1].trim(),
         areaName: areaName.trim(),
-        areaId: areaName ? ensureAreaByName(areaName) : (areas[0]?.id || DEFAULT_AREA_ID),
+        areaId: existingAreaIdByName(areaName),
         copies: 1,
         note: rosterNoteFromColumns(cols)
       };
@@ -703,7 +709,7 @@ function rowsToRoster(rows) {
         name: cols[0].trim(),
         address: cols[1].trim(),
         areaName: areaName.trim(),
-        areaId: areaName ? ensureAreaByName(areaName) : (areas[0]?.id || DEFAULT_AREA_ID),
+        areaId: existingAreaIdByName(areaName),
         copies: 1,
         note: rosterNoteFromColumns(cols)
       };
@@ -743,7 +749,7 @@ function fillFormFromRoster(item) {
   $("#orderNo").value = nextOrder();
   $("#customerName").value = item.name;
   $("#address").value = item.address;
-  $("#areaSelect").value = item.areaId || ensureAreaByName(item.areaName);
+  $("#areaSelect").value = existingAreaIdByName(item.areaName || areaById(item.areaId).name);
   $("#plannedTime").value = "";
   $("#status").value = "planned";
   $("#note").value = item.note || "";
