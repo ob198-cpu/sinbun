@@ -1364,7 +1364,9 @@ function bindEvents() {
       stopLineDrawing();
       return;
     }
-    showLineTypeMenu($("#lineTypeMenu").classList.contains("hidden"));
+    const willShow = $("#lineTypeMenu").classList.contains("hidden");
+    showLineTypeMenu(willShow);
+    updateMapModeHint(willShow ? "線の種類を選んでください。" : "");
   });
   $("#straightLineBtn").addEventListener("click", () => startLineDrawing("straight"));
   $("#curveLineBtn").addEventListener("click", () => startLineDrawing("curve"));
