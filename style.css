@@ -537,6 +537,24 @@ input[type="color"] {
   box-shadow: 0 8px 26px rgba(31, 42, 68, 0.14);
 }
 
+.line-type-menu {
+  position: absolute;
+  z-index: 4;
+  right: 18px;
+  top: 74px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid rgba(217, 222, 232, 0.85);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 8px 26px rgba(31, 42, 68, 0.14);
+}
+
+.line-type-menu.hidden {
+  display: none;
+}
+
 .map-mode-hint {
   position: absolute;
   z-index: 4;
@@ -858,6 +876,12 @@ input[type="color"] {
     padding: 4px 3px;
     font-size: 12px;
     white-space: nowrap;
+  }
+
+  .line-type-menu {
+    top: 52px;
+    right: 8px;
+    left: auto;
   }
 
   .stop-list {

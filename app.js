@@ -775,9 +775,7 @@ function finishDrawnLine() {
   });
   drawingLinePath = [];
   drawingLineStart = null;
-  drawLineMode = false;
-  $("#drawLineBtn")?.classList.remove("active");
-  updateMapModeHint("");
+  stopLineDrawing();
   saveState();
   syncMap({ fit: false });
 }
@@ -1139,6 +1137,34 @@ function updateMapModeHint(message) {
   hint.classList.toggle("hidden", !message);
 }
 
+function showLineTypeMenu(show) {
+  $("#lineTypeMenu")?.classList.toggle("hidden", !show);
+}
+
+function startLineDrawing(type) {
+  drawLineType = type;
+  drawLineMode = true;
+  areaAssignMode = false;
+  areaSelectionStart = null;
+  clearAreaSelectionPreview();
+  showLineTypeMenu(false);
+  $("#drawLineBtn").classList.add("active");
+  $("#areaAssignBtn").classList.remove("active");
+  updateMapModeHint(`線を引く（${drawLineType === "straight" ? "直線" : "曲線"}）: 地図上をドラッグしてください。`);
+}
+
+function stopLineDrawing() {
+  drawLineMode = false;
+  isDrawingLine = false;
+  drawingLinePath = [];
+  drawingLineStart = null;
+  showLineTypeMenu(false);
+  $("#drawLineBtn").classList.remove("active");
+  updateMapModeHint("");
+  if (drawingLineOverlay) drawingLineOverlay.setMap(null);
+  drawingLineOverlay = null;
+}
+
 function handleRegisteredAction(action, id) {
   if (action === "details") {
     expandedRegisteredId = expandedRegisteredId === id ? "" : id;
@@ -1298,29 +1324,17 @@ function bindEvents() {
     syncMap();
   });
   $("#drawLineBtn").addEventListener("click", () => {
-    if (!drawLineMode) {
-      const choice = prompt("線の種類を入力してください。\n1: 直線\n2: 曲線", drawLineType === "straight" ? "1" : "2");
-      if (choice === null) return;
-      drawLineType = choice.trim() === "1" || choice.trim() === "直線" ? "straight" : "curve";
+    if (drawLineMode) {
+      stopLineDrawing();
+      return;
     }
-    drawLineMode = !drawLineMode;
-    areaAssignMode = false;
-    areaSelectionStart = null;
-    clearAreaSelectionPreview();
-    $("#drawLineBtn").classList.toggle("active", drawLineMode);
-    $("#areaAssignBtn").classList.remove("active");
-    updateMapModeHint(drawLineMode ? `線を引く（${drawLineType === "straight" ? "直線" : "曲線"}）: 地図上をドラッグしてください。` : "");
-    if (!drawLineMode) {
-      isDrawingLine = false;
-      drawingLinePath = [];
-      drawingLineStart = null;
-      if (drawingLineOverlay) drawingLineOverlay.setMap(null);
-      drawingLineOverlay = null;
-    }
+    showLineTypeMenu($("#lineTypeMenu").classList.contains("hidden"));
   });
+  $("#straightLineBtn").addEventListener("click", () => startLineDrawing("straight"));
+  $("#curveLineBtn").addEventListener("click", () => startLineDrawing("curve"));
   $("#areaAssignBtn").addEventListener("click", () => {
     areaAssignMode = !areaAssignMode;
-    drawLineMode = false;
+    stopLineDrawing();
     areaSelectionStart = null;
     isSelectingArea = false;
     clearAreaSelectionPreview();
