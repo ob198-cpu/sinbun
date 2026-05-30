@@ -94,9 +94,10 @@ label {
 }
 
 .app-shell {
+  --sidebar-width: 390px;
   min-height: 100vh;
   display: grid;
-  grid-template-columns: minmax(320px, 390px) 1fr;
+  grid-template-columns: minmax(300px, var(--sidebar-width)) 8px 1fr;
 }
 
 .sidebar {
@@ -109,6 +110,35 @@ label {
 
 .panel-resize-handle {
   display: none;
+}
+
+.sidebar-resize-handle {
+  position: relative;
+  z-index: 8;
+  width: 8px;
+  height: 100vh;
+  border-right: 1px solid rgba(217, 222, 232, 0.9);
+  border-left: 1px solid rgba(217, 222, 232, 0.9);
+  background: linear-gradient(90deg, #edf2f6, #ffffff 50%, #edf2f6);
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.sidebar-resize-handle::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 78px;
+  border-radius: 999px;
+  background: rgba(102, 112, 133, 0.72);
+  transform: translate(-50%, -50%);
+}
+
+body.resizing-sidebar {
+  cursor: col-resize;
+  user-select: none;
 }
 
 .brand {
@@ -793,6 +823,10 @@ input[type="color"] {
 @media (max-width: 980px) {
   .app-shell {
     grid-template-columns: 1fr;
+  }
+
+  .sidebar-resize-handle {
+    display: none;
   }
 
   .sidebar {

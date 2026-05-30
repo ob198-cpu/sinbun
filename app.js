@@ -2,6 +2,7 @@ const STORAGE_KEY = "newspaper-delivery-map-v1";
 const KEY_STORAGE = "newspaper-delivery-google-key";
 const LABEL_STORAGE = "newspaper-delivery-show-labels";
 const PANEL_HEIGHT_STORAGE = "newspaper-delivery-mobile-panel-height";
+const SIDEBAR_WIDTH_STORAGE = "newspaper-delivery-sidebar-width";
 const PUBLIC_URL = "https://ob198-cpu.github.io/sinbun/";
 
 const DEFAULT_AREA_ID = "area-default";
@@ -772,9 +773,37 @@ function loadGoogleMaps(apiKey) {
 }
 
 function setupPanelResize() {
+  const shell = $(".app-shell");
   const sidebar = $(".sidebar");
   const handle = $("#panelResizeHandle");
-  if (!sidebar || !handle) return;
+  const sideHandle = $("#sidebarResizeHandle");
+  if (!sidebar || !handle || !shell) return;
+
+  const savedWidth = localStorage.getItem(SIDEBAR_WIDTH_STORAGE);
+  if (savedWidth) shell.style.setProperty("--sidebar-width", savedWidth);
+  if (sideHandle) {
+    sideHandle.addEventListener("pointerdown", event => {
+      event.preventDefault();
+      sideHandle.setPointerCapture(event.pointerId);
+      document.body.classList.add("resizing-sidebar");
+    });
+    sideHandle.addEventListener("pointermove", event => {
+      if (!sideHandle.hasPointerCapture(event.pointerId)) return;
+      const width = Math.min(Math.max(event.clientX, 280), Math.min(560, window.innerWidth * 0.58));
+      const value = `${Math.round(width)}px`;
+      shell.style.setProperty("--sidebar-width", value);
+      localStorage.setItem(SIDEBAR_WIDTH_STORAGE, value);
+    });
+    sideHandle.addEventListener("pointerup", event => {
+      if (sideHandle.hasPointerCapture(event.pointerId)) sideHandle.releasePointerCapture(event.pointerId);
+      document.body.classList.remove("resizing-sidebar");
+    });
+    sideHandle.addEventListener("pointercancel", event => {
+      if (sideHandle.hasPointerCapture(event.pointerId)) sideHandle.releasePointerCapture(event.pointerId);
+      document.body.classList.remove("resizing-sidebar");
+    });
+  }
+
   const saved = localStorage.getItem(PANEL_HEIGHT_STORAGE);
   if (saved) sidebar.style.setProperty("--mobile-panel-height", saved);
 
