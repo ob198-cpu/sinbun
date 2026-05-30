@@ -333,6 +333,7 @@ function renderList() {
 function render() {
   renderAreaControls();
   renderRosterList();
+  renderRegisteredList();
   renderStats();
   renderList();
 }
@@ -416,6 +417,48 @@ function renderRosterList() {
       renderRosterList();
     });
     list.appendChild(node);
+  });
+}
+
+function renderRegisteredList() {
+  const list = $("#registeredList");
+  if (!list) return;
+  const query = ($("#registeredSearch")?.value || "").trim().toLowerCase();
+  const items = stops
+    .filter(stop => !query || `${stop.customerName} ${stop.address} ${areaById(stop.areaId).name}`.toLowerCase().includes(query))
+    .sort((a, b) => Number(a.orderNo) - Number(b.orderNo));
+  list.innerHTML = "";
+  if (!items.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.textContent = "登録済みの名簿がありません。";
+    list.appendChild(empty);
+    return;
+  }
+
+  items.forEach(stop => {
+    const statusInfo = STATUS[stop.status] || STATUS.planned;
+    const row = document.createElement("article");
+    row.className = "registered-row";
+    row.innerHTML = `
+      <div class="registered-order">${escapeHtml(stop.orderNo)}</div>
+      <div class="registered-main">
+        <div class="registered-title">
+          <strong>${escapeHtml(stop.customerName)}</strong>
+          <span class="status-pill status-${escapeHtml(stop.status)}">${escapeHtml(statusInfo.label)}</span>
+        </div>
+        <p>${escapeHtml(stop.address)}</p>
+        <p>${escapeHtml(areaById(stop.areaId).name)} / ${escapeHtml(stop.copies || 1)}部${stop.lat && stop.lng ? " / 位置登録済み" : " / 位置未登録"}</p>
+        <div class="card-actions">
+          <button type="button" data-registered-action="place" data-id="${escapeHtml(stop.id)}">${pendingPlaceStopId === stop.id ? "位置指定中" : "位置指定"}</button>
+          <button type="button" data-registered-action="delivered" data-id="${escapeHtml(stop.id)}">完了</button>
+          <button type="button" data-registered-action="missed" data-id="${escapeHtml(stop.id)}">未配</button>
+          <button type="button" data-registered-action="wrong" data-id="${escapeHtml(stop.id)}">誤配</button>
+          <button type="button" data-registered-action="edit" data-id="${escapeHtml(stop.id)}">編集</button>
+        </div>
+      </div>
+    `;
+    list.appendChild(row);
   });
 }
 
@@ -806,16 +849,44 @@ function showControlPanel(target) {
   });
 }
 
+function handleRegisteredAction(action, id) {
+  if (action === "place") {
+    pendingPlaceStopId = id;
+    selectedRosterId = "";
+    render();
+    return;
+  }
+  if (action === "edit") {
+    editStop(id);
+    showControlPanel("new");
+    return;
+  }
+  if (["delivered", "missed", "wrong"].includes(action)) {
+    setStatus(id, action);
+  }
+}
+
 function bindEvents() {
   $("#apiKey").value = localStorage.getItem(KEY_STORAGE) || "";
   $$(".control-tab").forEach(button => {
     button.addEventListener("click", () => showControlPanel(button.dataset.controlTarget));
+  });
+  $("#showNewBtn").addEventListener("click", () => {
+    clearForm();
+    showControlPanel("new");
+  });
+  $("#registeredSearch").addEventListener("input", renderRegisteredList);
+  $("#registeredList").addEventListener("click", event => {
+    const button = event.target.closest("[data-registered-action]");
+    if (!button) return;
+    handleRegisteredAction(button.dataset.registeredAction, button.dataset.id);
   });
   $("#loadMapBtn").addEventListener("click", () => loadGoogleMaps($("#apiKey").value.trim()));
   $("#stopForm").addEventListener("submit", event => {
     event.preventDefault();
     upsertStop(collectForm());
     clearForm();
+    showControlPanel("roster");
   });
   $("#clearFormBtn").addEventListener("click", clearForm);
   $("#importRosterBtn").addEventListener("click", () => {

@@ -18,22 +18,10 @@
       </header>
 
       <section class="panel compact-stats" aria-label="配達状況">
-        <div>
-          <strong id="statPlanned">0</strong>
-          <span>予定</span>
-        </div>
-        <div>
-          <strong id="statDelivered">0</strong>
-          <span>完了</span>
-        </div>
-        <div>
-          <strong id="statMissed">0</strong>
-          <span>未配</span>
-        </div>
-        <div>
-          <strong id="statWrong">0</strong>
-          <span>誤配</span>
-        </div>
+        <div><strong id="statPlanned">0</strong><span>予定</span></div>
+        <div><strong id="statDelivered">0</strong><span>完了</span></div>
+        <div><strong id="statMissed">0</strong><span>未配</span></div>
+        <div><strong id="statWrong">0</strong><span>誤配</span></div>
       </section>
 
       <nav class="control-switch" aria-label="操作切替">
@@ -42,36 +30,15 @@
         <button type="button" class="control-tab" data-control-target="settings">設定</button>
       </nav>
 
-      <section class="panel control-panel hidden" data-control-panel="settings">
+      <section class="panel control-panel" data-control-panel="roster">
         <div class="panel-heading">
-          <h2>地図設定</h2>
+          <h2>名簿</h2>
+          <button id="showNewBtn" type="button" class="ghost">追加</button>
         </div>
-        <div class="api-panel">
-          <label for="apiKey">Google Maps APIキー</label>
-          <div class="key-row">
-            <input id="apiKey" type="password" autocomplete="off" placeholder="AIza...">
-            <button id="loadMapBtn" type="button" title="地図を読み込む">読込</button>
-          </div>
-        </div>
-      </section>
-
-      <section class="panel control-panel hidden" data-control-panel="settings">
-        <div class="panel-heading">
-          <h2>エリア管理</h2>
-        </div>
-        <form id="areaForm" class="area-form">
-          <input type="hidden" id="areaId">
-          <label>エリア名
-            <input id="areaName" type="text" placeholder="例: 北口Aコース">
-          </label>
-          <div class="area-form-row">
-            <label>色
-              <input id="areaColor" type="color" value="#146c94">
-            </label>
-            <button type="submit" class="primary">エリア保存</button>
-          </div>
-        </form>
-        <div id="areaManageList" class="area-manage-list"></div>
+        <label>登録済み検索
+          <input id="registeredSearch" type="search" placeholder="名前・住所で検索">
+        </label>
+        <div id="registeredList" class="registered-list"></div>
       </section>
 
       <section class="panel control-panel hidden" data-control-panel="new">
@@ -118,25 +85,57 @@
             <button id="clearFormBtn" type="button">クリア</button>
           </div>
         </form>
+
+        <div class="panel-subsection">
+          <div class="panel-heading">
+            <h2>名簿引用</h2>
+            <button id="clearRosterBtn" type="button" class="ghost">名簿クリア</button>
+          </div>
+          <label>名簿貼り付け
+            <textarea id="rosterInput" rows="5" placeholder="名前,住所,エリア,部数,メモ&#10;山田様,札幌市中央区北1条西2丁目,中央北コース,1,集合ポスト左上"></textarea>
+          </label>
+          <div class="roster-actions">
+            <button id="importRosterBtn" type="button" class="primary">名簿を読み込む</button>
+            <button id="addRosterStopBtn" type="button">候補を配達先へ</button>
+          </div>
+          <label>候補検索
+            <input id="rosterSearch" type="search" placeholder="名前・住所で検索">
+          </label>
+          <p class="hint-text">候補を地図の家の位置へドラッグすると、その場所に登録できます。</p>
+          <div id="rosterList" class="roster-list"></div>
+        </div>
       </section>
 
-      <section class="panel control-panel" data-control-panel="roster">
+      <section class="panel control-panel hidden" data-control-panel="settings">
         <div class="panel-heading">
-          <h2>名簿引用</h2>
-          <button id="clearRosterBtn" type="button" class="ghost">名簿クリア</button>
+          <h2>地図設定</h2>
         </div>
-        <label>名簿貼り付け
-          <textarea id="rosterInput" rows="5" placeholder="名前,住所,エリア,部数,メモ&#10;山田様,札幌市中央区北1条西2丁目,中央北コース,1,集合ポスト左上"></textarea>
-        </label>
-        <div class="roster-actions">
-          <button id="importRosterBtn" type="button" class="primary">名簿を読み込む</button>
-          <button id="addRosterStopBtn" type="button">候補を配達先へ</button>
+        <div class="api-panel">
+          <label for="apiKey">Google Maps APIキー</label>
+          <div class="key-row">
+            <input id="apiKey" type="password" autocomplete="off" placeholder="AIza...">
+            <button id="loadMapBtn" type="button" title="地図を読み込む">読込</button>
+          </div>
         </div>
-        <label>候補検索
-          <input id="rosterSearch" type="search" placeholder="名前・住所で検索">
-        </label>
-        <p class="hint-text">候補を地図の家の位置へドラッグすると、その場所に登録できます。</p>
-        <div id="rosterList" class="roster-list"></div>
+      </section>
+
+      <section class="panel control-panel hidden" data-control-panel="settings">
+        <div class="panel-heading">
+          <h2>エリア管理</h2>
+        </div>
+        <form id="areaForm" class="area-form">
+          <input type="hidden" id="areaId">
+          <label>エリア名
+            <input id="areaName" type="text" placeholder="例: 北口Aコース">
+          </label>
+          <div class="area-form-row">
+            <label>色
+              <input id="areaColor" type="color" value="#146c94">
+            </label>
+            <button type="submit" class="primary">エリア保存</button>
+          </div>
+        </form>
+        <div id="areaManageList" class="area-manage-list"></div>
       </section>
 
       <section class="panel control-panel hidden" data-control-panel="settings">
