@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>新聞配達マップ共有</title>
-  <link rel="stylesheet" href="style.css?v=20260530-20">
+  <link rel="stylesheet" href="style.css?v=20260530-21">
 </head>
 <body>
   <div class="app-shell">
@@ -71,6 +71,11 @@
           <div class="form-actions">
             <button type="submit" class="primary">保存</button>
             <button id="clearFormBtn" type="button">クリア</button>
+          </div>
+          <div class="roster-actions">
+            <button id="downloadRosterTemplateBtn" type="button">入力用名簿ダウンロード</button>
+            <button id="importRosterFileBtn" type="button">入力用名簿取り込み</button>
+            <input id="rosterFileInput" type="file" accept=".xlsx,.xls,.html,.csv,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
           </div>
         </form>
 
@@ -196,6 +201,6 @@
   </template>
 
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-  <script src="app.js?v=20260530-20"></script>
+  <script src="app.js?v=20260530-21"></script>
 </body>
 </html>

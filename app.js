@@ -1638,6 +1638,33 @@ function bindEvents() {
     showControlPanel("roster");
   });
   $("#clearFormBtn").addEventListener("click", clearForm);
+  $("#downloadRosterTemplateBtn").addEventListener("click", downloadRosterTemplate);
+  $("#importRosterFileBtn").addEventListener("click", () => $("#rosterFileInput").click());
+  $("#rosterFileInput").addEventListener("change", event => {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const isRealExcel = /\.xlsx$/i.test(file.name);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const imported = isRealExcel
+        ? parseRosterWorkbookArrayBuffer(reader.result)
+        : parseRosterWorkbookText(String(reader.result || ""));
+      if (!imported.length) {
+        alert("入力用名簿を読み込めませんでした。名前と住所を入力してください。");
+        return;
+      }
+      importRosterItems(imported);
+      showControlPanel("roster");
+      render();
+      syncMap();
+    };
+    if (isRealExcel) {
+      reader.readAsArrayBuffer(file);
+    } else {
+      reader.readAsText(file, "utf-8");
+    }
+    event.target.value = "";
+  });
   $("#areaForm").addEventListener("submit", event => {
     event.preventDefault();
     const name = $("#areaName").value.trim();
