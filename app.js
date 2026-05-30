@@ -392,9 +392,9 @@ function renderAreaControls() {
     const tab = document.createElement("button");
     tab.type = "button";
     tab.className = `area-tab ${currentAreaId === area.id ? "active" : ""}`;
-    tab.textContent = `${area.name} (${stops.filter(stop => stop.areaId === area.id).length})`;
     tab.dataset.areaId = area.id;
     tab.style.setProperty("--tab-color", area.color);
+    tab.innerHTML = `<span>${escapeHtml(area.name)} (${stops.filter(stop => stop.areaId === area.id).length})</span><span class="area-tab-delete" data-area-tab-delete="${escapeHtml(area.id)}">×</span>`;
     tabs.appendChild(tab);
   });
 
@@ -1211,6 +1211,24 @@ function handleRegisteredAction(action, id) {
   }
 }
 
+function deleteAreaById(areaId) {
+  if (areas.length <= 1) {
+    alert("エリアは1つ以上必要です。");
+    return;
+  }
+  const area = areaById(areaId);
+  if (!area || !confirm(`${area.name} を削除しますか？`)) return;
+  const fallback = areas.find(item => item.id !== areaId);
+  stops.forEach(stop => {
+    if (stop.areaId === areaId) stop.areaId = fallback.id;
+  });
+  areas = areas.filter(item => item.id !== areaId);
+  if (currentAreaId === areaId) currentAreaId = "all";
+  saveState();
+  render();
+  syncMap();
+}
+
 function bindEvents() {
   $("#apiKey").value = localStorage.getItem(KEY_STORAGE) || "";
   $$(".control-tab").forEach(button => {
@@ -1299,22 +1317,16 @@ function bindEvents() {
       $("#areaColor").value = area.color;
     }
     if (deleteId) {
-      if (areas.length <= 1) {
-        alert("エリアは1つ以上必要です。");
-        return;
-      }
-      const fallback = areas.find(area => area.id !== deleteId);
-      stops.forEach(stop => {
-        if (stop.areaId === deleteId) stop.areaId = fallback.id;
-      });
-      areas = areas.filter(area => area.id !== deleteId);
-      if (currentAreaId === deleteId) currentAreaId = "all";
-      saveState();
-      render();
-      syncMap();
+      deleteAreaById(deleteId);
     }
   });
   $("#areaTabs").addEventListener("click", event => {
+    const deleteButton = event.target.closest("[data-area-tab-delete]");
+    if (deleteButton) {
+      event.stopPropagation();
+      deleteAreaById(deleteButton.dataset.areaTabDelete);
+      return;
+    }
     const button = event.target.closest("[data-area-id]");
     if (!button) return;
     currentAreaId = button.dataset.areaId;

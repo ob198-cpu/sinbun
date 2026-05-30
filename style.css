@@ -614,6 +614,23 @@ input[type="color"] {
   gap: 7px;
 }
 
+.area-tab-delete {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  margin-left: 3px;
+  border-radius: 999px;
+  color: var(--bad);
+  background: rgba(189, 61, 50, 0.10);
+  font-weight: 900;
+}
+
+.area-tab.active .area-tab-delete {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.24);
+}
+
 .area-tab::before {
   content: "";
   width: 10px;
