@@ -107,6 +107,10 @@ label {
   background: #eef3f6;
 }
 
+.panel-resize-handle {
+  display: none;
+}
+
 .brand {
   display: flex;
   align-items: flex-start;
@@ -760,18 +764,47 @@ input[type="color"] {
   }
 
   .sidebar {
+    --mobile-panel-height: 46vh;
     position: fixed;
     left: 0;
     right: 0;
     bottom: 0;
     z-index: 10;
-    max-height: 46vh;
+    height: var(--mobile-panel-height);
+    max-height: 78vh;
+    min-height: 94px;
     overflow: auto;
-    padding: 8px 10px 10px;
+    padding: 22px 10px 10px;
     border-top: 1px solid var(--line);
     border-bottom: 0;
     background: rgba(238, 243, 246, 0.96);
     box-shadow: 0 -10px 32px rgba(31, 42, 68, 0.18);
+  }
+
+  .panel-resize-handle {
+    display: grid;
+    place-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 12;
+    height: 18px;
+    margin: -18px -10px 6px;
+    border-bottom: 1px solid rgba(217, 222, 232, 0.9);
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--accent);
+    cursor: ns-resize;
+    touch-action: none;
+    font-weight: 900;
+  }
+
+  .panel-resize-handle span {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 18px;
+    border-radius: 0 0 999px 999px;
+    background: #fff;
+    box-shadow: 0 4px 14px rgba(31, 42, 68, 0.14);
   }
 
   .brand {

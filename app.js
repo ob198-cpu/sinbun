@@ -1,6 +1,7 @@
 const STORAGE_KEY = "newspaper-delivery-map-v1";
 const KEY_STORAGE = "newspaper-delivery-google-key";
 const LABEL_STORAGE = "newspaper-delivery-show-labels";
+const PANEL_HEIGHT_STORAGE = "newspaper-delivery-mobile-panel-height";
 const PUBLIC_URL = "https://ob198-cpu.github.io/sinbun/";
 
 const DEFAULT_AREA_ID = "area-default";
@@ -599,6 +600,29 @@ function loadGoogleMaps(apiKey) {
   script.defer = true;
   script.onerror = () => alert("Google Mapsを読み込めませんでした。APIキーとネットワークを確認してください。");
   document.head.appendChild(script);
+}
+
+function setupPanelResize() {
+  const sidebar = $(".sidebar");
+  const handle = $("#panelResizeHandle");
+  if (!sidebar || !handle) return;
+  const saved = localStorage.getItem(PANEL_HEIGHT_STORAGE);
+  if (saved) sidebar.style.setProperty("--mobile-panel-height", saved);
+
+  handle.addEventListener("pointerdown", event => {
+    event.preventDefault();
+    handle.setPointerCapture(event.pointerId);
+  });
+  handle.addEventListener("pointermove", event => {
+    if (!handle.hasPointerCapture(event.pointerId)) return;
+    const height = Math.min(Math.max(window.innerHeight - event.clientY, 94), window.innerHeight * 0.78);
+    const value = `${Math.round(height)}px`;
+    sidebar.style.setProperty("--mobile-panel-height", value);
+    localStorage.setItem(PANEL_HEIGHT_STORAGE, value);
+  });
+  handle.addEventListener("pointerup", event => {
+    if (handle.hasPointerCapture(event.pointerId)) handle.releasePointerCapture(event.pointerId);
+  });
 }
 
 window.initMap = function initMap() {
@@ -1375,6 +1399,7 @@ function bindEvents() {
 function init() {
   loadState();
   bindEvents();
+  setupPanelResize();
   render();
   clearForm();
   const savedKey = localStorage.getItem(KEY_STORAGE);
