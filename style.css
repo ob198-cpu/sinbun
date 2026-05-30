@@ -405,6 +405,11 @@ input[type="color"] {
   line-height: 1.45;
 }
 
+.pin-add-hint {
+  color: var(--bad);
+  font-weight: 800;
+}
+
 .map-canvas.drop-ready {
   outline: 4px solid rgba(20, 108, 148, 0.35);
   outline-offset: -4px;
