@@ -1241,42 +1241,46 @@ function drawSavedAreaRectangles() {
       clickable: false
     });
     areaRectangles.push(rectangle);
-    const label = new AreaNameOverlay(area, map);
+    const label = createAreaNameOverlay(area);
     areaLabels.push(label);
   });
 }
 
-class AreaNameOverlay extends google.maps.OverlayView {
-  constructor(area, targetMap) {
-    super();
-    this.area = area;
-    this.div = null;
-    this.setMap(targetMap);
-  }
+function createAreaNameOverlay(area) {
+  class AreaNameOverlay extends google.maps.OverlayView {
+    constructor(targetArea) {
+      super();
+      this.area = targetArea;
+      this.div = null;
+    }
 
-  onAdd() {
-    this.div = document.createElement("div");
-    this.div.className = "area-map-label";
-    this.div.textContent = this.area.name;
-    this.div.style.borderColor = this.area.color;
-    this.div.style.color = this.area.color;
-    this.getPanes().overlayLayer.appendChild(this.div);
-  }
+    onAdd() {
+      this.div = document.createElement("div");
+      this.div.className = "area-map-label";
+      this.div.textContent = this.area.name;
+      this.div.style.borderColor = this.area.color;
+      this.div.style.color = this.area.color;
+      this.getPanes().overlayLayer.appendChild(this.div);
+    }
 
-  draw() {
-    if (!this.div || !this.area.bounds) return;
-    const projection = this.getProjection();
-    const northWest = new google.maps.LatLng(this.area.bounds.north, this.area.bounds.west);
-    const point = projection.fromLatLngToDivPixel(northWest);
-    if (!point) return;
-    this.div.style.left = `${point.x + 4}px`;
-    this.div.style.top = `${point.y + 4}px`;
-  }
+    draw() {
+      if (!this.div || !this.area.bounds) return;
+      const projection = this.getProjection();
+      const northWest = new google.maps.LatLng(this.area.bounds.north, this.area.bounds.west);
+      const point = projection.fromLatLngToDivPixel(northWest);
+      if (!point) return;
+      this.div.style.left = `${point.x + 4}px`;
+      this.div.style.top = `${point.y + 4}px`;
+    }
 
-  onRemove() {
-    if (this.div) this.div.remove();
-    this.div = null;
+    onRemove() {
+      if (this.div) this.div.remove();
+      this.div = null;
+    }
   }
+  const overlay = new AreaNameOverlay(area);
+  overlay.setMap(map);
+  return overlay;
 }
 
 function jumpToArea(areaId) {
