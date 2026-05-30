@@ -832,7 +832,7 @@ input[type="color"] {
     max-height: 78vh;
     min-height: 94px;
     overflow: auto;
-    padding: 22px 10px 10px;
+    padding: 34px 10px 10px;
     border-top: 1px solid var(--line);
     border-bottom: 0;
     background: rgba(238, 243, 246, 0.96);
@@ -842,11 +842,13 @@ input[type="color"] {
   .panel-resize-handle {
     display: grid;
     place-items: center;
-    position: sticky;
+    position: absolute;
     top: 0;
+    left: 0;
+    right: 0;
     z-index: 12;
-    height: 18px;
-    margin: -18px -10px 6px;
+    height: 28px;
+    margin: 0;
     border-bottom: 1px solid rgba(217, 222, 232, 0.9);
     background: rgba(255, 255, 255, 0.92);
     color: var(--accent);
@@ -859,7 +861,7 @@ input[type="color"] {
     display: grid;
     place-items: center;
     width: 48px;
-    height: 18px;
+    height: 26px;
     border-radius: 0 0 999px 999px;
     background: #fff;
     box-shadow: 0 4px 14px rgba(31, 42, 68, 0.14);
