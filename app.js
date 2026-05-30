@@ -202,6 +202,23 @@ function stopFromRoster(item, position = {}) {
   });
 }
 
+function importRosterItems(items) {
+  roster = items;
+  items.forEach(item => {
+    const existing = stops.find(stop => stop.customerName === item.name && stop.address === item.address);
+    const stop = stopFromRoster(item);
+    if (existing) {
+      stop.id = existing.id;
+      stop.orderNo = existing.orderNo;
+      stop.lat = existing.lat;
+      stop.lng = existing.lng;
+      stop.status = existing.status || stop.status;
+    }
+    upsertStop(stop);
+  });
+  selectedRosterId = "";
+}
+
 function clearForm() {
   $("#stopForm").reset();
   $("#stopId").value = "";
@@ -511,6 +528,65 @@ function parseRosterText(text) {
     .map(line => line.trim())
     .filter(Boolean)
     .map(line => splitCsvLine(line))
+    .filter(cols => !isRosterHeader(cols))
+    .filter(cols => cols[0] && cols[1])
+    .map(cols => {
+      const areaName = cols[2] || "";
+      return {
+        id: crypto.randomUUID(),
+        name: cols[0].trim(),
+        address: cols[1].trim(),
+        areaName: areaName.trim(),
+        areaId: areaName ? ensureAreaByName(areaName) : (areas[0]?.id || DEFAULT_AREA_ID),
+        copies: Number(cols[3]) || 1,
+        note: (cols[4] || "").trim()
+      };
+    });
+}
+
+function isRosterHeader(cols) {
+  const first = String(cols[0] || "").trim();
+  const second = String(cols[1] || "").trim();
+  return first === "名前" && second === "住所";
+}
+
+function downloadRosterTemplate() {
+  const headers = ["名前", "住所", "エリア", "部数", "メモ"];
+  const sample = ["山田様", "札幌市中央区北1条西2丁目", "中央北コース", "1", "集合ポスト左上"];
+  const rows = [headers, sample]
+    .map(row => `<tr>${row.map(cell => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`)
+    .join("");
+  const html = `<!doctype html>
+<html>
+<head><meta charset="utf-8"></head>
+<body>
+  <table>
+    ${rows}
+  </table>
+</body>
+</html>`;
+  const blob = new Blob(["\uFEFF" + html], { type: "application/vnd.ms-excel;charset=utf-8" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "新聞配達_入力用名簿.xls";
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+function parseRosterWorkbookText(text) {
+  if (/<table[\s>]/i.test(text)) {
+    const doc = new DOMParser().parseFromString(text, "text/html");
+    const rows = Array.from(doc.querySelectorAll("tr"))
+      .map(row => Array.from(row.querySelectorAll("th,td")).map(cell => cell.textContent.trim()))
+      .filter(cols => cols.length);
+    return rowsToRoster(rows);
+  }
+  return parseRosterText(text);
+}
+
+function rowsToRoster(rows) {
+  return rows
+    .filter(cols => !isRosterHeader(cols))
     .filter(cols => cols[0] && cols[1])
     .map(cols => {
       const areaName = cols[2] || "";
@@ -1258,9 +1334,8 @@ function bindEvents() {
       alert("名簿は「名前,住所,エリア,部数,メモ」の形で貼り付けてください。");
       return;
     }
-    roster = imported;
-    selectedRosterId = roster[0]?.id || "";
-    saveState();
+    importRosterItems(imported);
+    showControlPanel("roster");
     render();
   });
   $("#clearRosterBtn").addEventListener("click", () => {
@@ -1276,13 +1351,31 @@ function bindEvents() {
     pendingPlaceStopId = "";
     selectRosterItem(target.dataset.rosterId);
   });
-  $("#addRosterStopBtn").addEventListener("click", () => {
-    const item = selectedRoster();
-    if (!item) {
-      alert("名簿候補を選択してください。");
-      return;
-    }
-    upsertStop(stopFromRoster(item));
+  $("#downloadRosterTemplateBtn").addEventListener("click", downloadRosterTemplate);
+  $("#importRosterFileBtn").addEventListener("click", () => $("#rosterFileInput").click());
+  $("#rosterFileInput").addEventListener("change", event => {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const imported = parseRosterWorkbookText(String(reader.result || ""));
+      if (!imported.length) {
+        alert("Excelから名簿を読み込めませんでした。名前と住所を入力してください。");
+        return;
+      }
+      importRosterItems(imported);
+      $("#rosterInput").value = roster.map(item => [
+        item.name,
+        item.address,
+        item.areaName || areaById(item.areaId).name,
+        item.copies || 1,
+        item.note || ""
+      ].map(csvCell).join(",")).join("\n");
+      showControlPanel("roster");
+      render();
+    };
+    reader.readAsText(file, "utf-8");
+    event.target.value = "";
   });
   $("#areaForm").addEventListener("submit", event => {
     event.preventDefault();
