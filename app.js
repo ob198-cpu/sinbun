@@ -62,6 +62,8 @@ let expandedRegisteredId = "";
 let currentFilter = "all";
 let currentAreaId = "all";
 let currentRosterAreaId = "all";
+let draggedRegisteredId = "";
+let pointerDraggedRegisteredId = "";
 let showNameLabels = localStorage.getItem(LABEL_STORAGE) !== "false";
 let drawLineMode = false;
 let drawLineType = "curve";
@@ -321,6 +323,52 @@ function deleteStop(id) {
   syncMap();
 }
 
+function renumberStopsByVisibleOrder(orderedIds) {
+  const ids = orderedIds.filter(Boolean);
+  if (!ids.length) return;
+  const idSet = new Set(ids);
+  const orderedStops = ids.map(id => stops.find(stop => stop.id === id)).filter(Boolean);
+  const remainingStops = stops
+    .filter(stop => !idSet.has(stop.id))
+    .sort((a, b) => Number(a.orderNo) - Number(b.orderNo));
+  const now = new Date().toISOString();
+  stops = [...orderedStops, ...remainingStops].map((stop, index) => ({
+    ...stop,
+    orderNo: index + 1,
+    updatedAt: idSet.has(stop.id) ? now : stop.updatedAt
+  }));
+  saveState();
+  renderRegisteredAreaTabs();
+  renderRegisteredList();
+  renderList();
+  syncMap();
+}
+
+function reorderRegisteredStop(dragId, targetId, placeAfter = false) {
+  if (!dragId || !targetId || dragId === targetId) return;
+  const rows = Array.from($("#registeredList").querySelectorAll("[data-stop-id]"));
+  const ids = rows.map(row => row.dataset.stopId);
+  const fromIndex = ids.indexOf(dragId);
+  const targetIndex = ids.indexOf(targetId);
+  if (fromIndex < 0 || targetIndex < 0) return;
+  ids.splice(fromIndex, 1);
+  let insertIndex = ids.indexOf(targetId);
+  if (insertIndex < 0) return;
+  if (placeAfter) insertIndex += 1;
+  ids.splice(insertIndex, 0, dragId);
+  renumberStopsByVisibleOrder(ids);
+}
+
+function updateStopOrder(id, requestedOrder) {
+  const target = stops.find(stop => stop.id === id);
+  if (!target) return;
+  const ordered = [...stops].sort((a, b) => Number(a.orderNo) - Number(b.orderNo));
+  const withoutTarget = ordered.filter(stop => stop.id !== id);
+  const nextIndex = Math.max(0, Math.min(withoutTarget.length, Number(requestedOrder) - 1));
+  withoutTarget.splice(nextIndex, 0, target);
+  renumberStopsByVisibleOrder(withoutTarget.map(stop => stop.id));
+}
+
 function setStatus(id, status) {
   const stop = stops.find(item => item.id === id);
   if (!stop) return;
@@ -576,9 +624,13 @@ function renderRegisteredList() {
     const expanded = expandedRegisteredId === stop.id;
     const row = document.createElement("article");
     row.className = `registered-row ${expanded ? "expanded" : ""}`;
+    row.draggable = true;
+    row.dataset.stopId = stop.id;
     row.innerHTML = `
       <div class="registered-main">
         <div class="registered-title">
+          <button type="button" class="registered-drag-handle" data-drag-handle aria-label="順番変更">↕</button>
+          <span class="registered-order-badge">${escapeHtml(stop.orderNo)}</span>
           <strong>${escapeHtml(stop.customerName)}</strong>
           <div class="registered-quick-actions">
             <button type="button" data-registered-action="place" data-id="${escapeHtml(stop.id)}">${pendingPlaceStopId === stop.id ? "ピン追加中" : "ピン追加"}</button>
@@ -588,6 +640,9 @@ function renderRegisteredList() {
         </div>
         ${expanded ? `
           <div class="registered-details">
+            <label class="registered-order-edit">地図番号
+              <input type="number" min="1" value="${escapeHtml(stop.orderNo)}" data-order-input data-id="${escapeHtml(stop.id)}">
+            </label>
             <span class="status-pill status-${escapeHtml(stop.status)}">${escapeHtml(statusInfo.label)}</span>
             <p>${escapeHtml(stop.address)}</p>
             <p>${escapeHtml(areaById(stop.areaId).name)}${stop.lat && stop.lng ? " / 位置登録済み" : " / 位置未登録"}</p>
@@ -1624,6 +1679,63 @@ function bindEvents() {
     const button = event.target.closest("[data-registered-action]");
     if (!button) return;
     handleRegisteredAction(button.dataset.registeredAction, button.dataset.id);
+  });
+  $("#registeredList").addEventListener("change", event => {
+    const input = event.target.closest("[data-order-input]");
+    if (!input) return;
+    updateStopOrder(input.dataset.id, input.value);
+  });
+  $("#registeredList").addEventListener("dragstart", event => {
+    const row = event.target.closest("[data-stop-id]");
+    if (!row) return;
+    draggedRegisteredId = row.dataset.stopId;
+    row.classList.add("dragging");
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", draggedRegisteredId);
+  });
+  $("#registeredList").addEventListener("dragover", event => {
+    const row = event.target.closest("[data-stop-id]");
+    if (!row || !draggedRegisteredId) return;
+    event.preventDefault();
+    row.classList.add("drag-over");
+  });
+  $("#registeredList").addEventListener("dragleave", event => {
+    event.target.closest("[data-stop-id]")?.classList.remove("drag-over");
+  });
+  $("#registeredList").addEventListener("drop", event => {
+    const row = event.target.closest("[data-stop-id]");
+    if (!row || !draggedRegisteredId) return;
+    event.preventDefault();
+    const rect = row.getBoundingClientRect();
+    reorderRegisteredStop(draggedRegisteredId, row.dataset.stopId, event.clientY > rect.top + rect.height / 2);
+    draggedRegisteredId = "";
+  });
+  $("#registeredList").addEventListener("dragend", () => {
+    draggedRegisteredId = "";
+    $$(".registered-row.dragging, .registered-row.drag-over").forEach(row => {
+      row.classList.remove("dragging", "drag-over");
+    });
+  });
+  $("#registeredList").addEventListener("pointerdown", event => {
+    const handle = event.target.closest("[data-drag-handle]");
+    if (!handle) return;
+    const row = handle.closest("[data-stop-id]");
+    if (!row) return;
+    pointerDraggedRegisteredId = row.dataset.stopId;
+    row.classList.add("dragging");
+    event.preventDefault();
+  });
+  document.addEventListener("pointerup", event => {
+    if (!pointerDraggedRegisteredId) return;
+    const targetRow = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-stop-id]");
+    const dragId = pointerDraggedRegisteredId;
+    pointerDraggedRegisteredId = "";
+    $$(".registered-row.dragging, .registered-row.drag-over").forEach(row => {
+      row.classList.remove("dragging", "drag-over");
+    });
+    if (!targetRow) return;
+    const rect = targetRow.getBoundingClientRect();
+    reorderRegisteredStop(dragId, targetRow.dataset.stopId, event.clientY > rect.top + rect.height / 2);
   });
   $("#loadMapBtn").addEventListener("click", () => loadGoogleMaps($("#apiKey").value.trim()));
   $("#stopForm").addEventListener("submit", event => {
