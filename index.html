@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>新聞配達マップ共有</title>
-  <link rel="stylesheet" href="style.css?v=20260530-16">
+  <link rel="stylesheet" href="style.css?v=20260530-17">
 </head>
 <body>
   <div class="app-shell">
@@ -49,7 +49,7 @@
       <section class="panel control-panel hidden" data-control-panel="new">
         <div class="panel-heading">
           <h2>配達先登録</h2>
-          <button id="sampleBtn" type="button" class="ghost">サンプル</button>
+          <button id="sampleBtn" type="button" class="ghost">サンプルを追加</button>
         </div>
         <form id="stopForm" class="stop-form">
           <input type="hidden" id="stopId">
@@ -60,7 +60,7 @@
             <input id="customerName" type="text" required placeholder="山田様 / 北1条マンション">
           </label>
           <label>住所
-            <input id="address" type="text" required placeholder="札幌市中央区...">
+            <input id="address" type="text" placeholder="札幌市中央区...">
           </label>
           <label>エリア
             <select id="areaSelect"></select>
@@ -226,6 +226,6 @@
   </template>
 
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-  <script src="app.js?v=20260530-16"></script>
+  <script src="app.js?v=20260530-17"></script>
 </body>
 </html>

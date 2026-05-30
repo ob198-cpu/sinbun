@@ -141,6 +141,23 @@ function applyInitialSampleState() {
   drawnLines = [];
 }
 
+function addSampleStop() {
+  SAMPLE_AREAS.forEach(area => ensureAreaByName(area.name));
+  const sample = SAMPLE_STOPS[stops.length % SAMPLE_STOPS.length];
+  const sampleArea = SAMPLE_AREAS.find(area => area.id === sample.areaId) || SAMPLE_AREAS[0];
+  const stop = normalizeStop({
+    ...sample,
+    id: crypto.randomUUID(),
+    orderNo: nextOrder(),
+    customerName: `${sample.customerName} サンプル${nextOrder()}`,
+    areaId: ensureAreaByName(sampleArea.name),
+    status: "planned"
+  });
+  upsertStop(stop);
+  clearForm();
+  showControlPanel("roster");
+}
+
 function sampleRosterItems() {
   return SAMPLE_STOPS.map(stop => {
     const area = SAMPLE_AREAS.find(item => item.id === stop.areaId) || SAMPLE_AREAS[0];
@@ -193,12 +210,12 @@ function normalizeStop(formData) {
     id: formData.id || crypto.randomUUID(),
     orderNo: Number(formData.orderNo) || nextOrder(),
     customerName: formData.customerName.trim(),
-    address: formData.address.trim(),
-    plannedTime: formData.plannedTime,
+    address: String(formData.address || "").trim(),
+    plannedTime: formData.plannedTime || "",
     copies: Number(formData.copies) || 1,
     status: formData.status,
     areaId: formData.areaId || DEFAULT_AREA_ID,
-    note: formData.note.trim(),
+    note: String(formData.note || "").trim(),
     lat: formData.lat || null,
     lng: formData.lng || null,
     updatedAt: new Date().toISOString()
@@ -1711,11 +1728,7 @@ function bindEvents() {
     clearForm();
   });
   $("#sampleBtn").addEventListener("click", () => {
-    applyInitialSampleState();
-    saveState();
-    render();
-    syncMap();
-    clearForm();
+    addSampleStop();
   });
   $$(".filter").forEach(button => {
     button.addEventListener("click", () => {
