@@ -505,6 +505,7 @@ function renderAreaControls() {
   areas.forEach(area => {
     const item = document.createElement("div");
     item.className = "area-manage-item";
+    item.dataset.areaJump = area.id;
     item.innerHTML = `
       <span class="area-swatch" style="background:${escapeHtml(area.color)}"></span>
       <strong>${escapeHtml(area.name)}</strong>
@@ -1696,10 +1697,19 @@ function bindEvents() {
       $("#areaId").value = area.id;
       $("#areaName").value = area.name;
       $("#areaColor").value = area.color;
+      return;
     }
     if (deleteId) {
       deleteAreaById(deleteId);
+      return;
     }
+    const item = event.target.closest("[data-area-jump]");
+    if (!item) return;
+    currentAreaId = item.dataset.areaJump;
+    render();
+    syncMap();
+    jumpToArea(currentAreaId);
+    clearForm();
   });
   $("#areaTabs").addEventListener("click", event => {
     const deleteButton = event.target.closest("[data-area-tab-delete]");
