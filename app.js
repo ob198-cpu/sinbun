@@ -279,6 +279,7 @@ function saveAreaBounds(name, boundsValue) {
   areaAssignMode = false;
   areaSelectionStart = null;
   clearAreaSelectionPreview();
+  updateMapModeHint("");
   saveState();
   render();
   syncMap({ fit: false });
@@ -626,6 +627,7 @@ function handleAreaSelectionClick(latLng) {
   if (!areaSelectionStart) {
     areaSelectionStart = { lat: latLng.lat(), lng: latLng.lng() };
     drawAreaSelectionPreview(areaBoundsFromPoints(areaSelectionStart, areaSelectionStart));
+    updateMapModeHint("エリア指定中: 範囲の反対側をクリックしてください。");
     return;
   }
   const boundsValue = areaBoundsFromPoints(areaSelectionStart, { lat: latLng.lat(), lng: latLng.lng() });
@@ -642,6 +644,12 @@ function handleAreaSelectionClick(latLng) {
     return;
   }
   saveAreaBounds(name.trim(), boundsValue);
+}
+
+function handleAreaSelectionPoint(point) {
+  if (!mapProjection) return;
+  const latLng = mapProjection.fromContainerPixelToLatLng(point);
+  if (latLng) handleAreaSelectionClick(latLng);
 }
 
 function areaBoundsFromPoints(a, b) {
@@ -676,6 +684,12 @@ function clearAreaSelectionPreview() {
 function setupLineDrawing() {
   const mapNode = $("#map");
   mapNode.addEventListener("pointerdown", event => {
+    if (areaAssignMode && mapProjection) {
+      event.preventDefault();
+      const rect = mapNode.getBoundingClientRect();
+      handleAreaSelectionPoint(new google.maps.Point(event.clientX - rect.left, event.clientY - rect.top));
+      return;
+    }
     if (!drawLineMode || !mapProjection) return;
     event.preventDefault();
     isDrawingLine = true;
@@ -1074,6 +1088,13 @@ function showControlPanel(target) {
   });
 }
 
+function updateMapModeHint(message) {
+  const hint = $("#mapModeHint");
+  if (!hint) return;
+  hint.textContent = message || "";
+  hint.classList.toggle("hidden", !message);
+}
+
 function handleRegisteredAction(action, id) {
   if (action === "place") {
     pendingPlaceStopId = id;
@@ -1230,8 +1251,11 @@ function bindEvents() {
   $("#drawLineBtn").addEventListener("click", () => {
     drawLineMode = !drawLineMode;
     areaAssignMode = false;
+    areaSelectionStart = null;
+    clearAreaSelectionPreview();
     $("#drawLineBtn").classList.toggle("active", drawLineMode);
     $("#areaAssignBtn").classList.remove("active");
+    updateMapModeHint(drawLineMode ? "線を引く: 地図上をドラッグしてください。" : "");
     if (!drawLineMode) {
       isDrawingLine = false;
       drawingLinePath = [];
@@ -1246,6 +1270,7 @@ function bindEvents() {
     clearAreaSelectionPreview();
     $("#areaAssignBtn").classList.toggle("active", areaAssignMode);
     $("#drawLineBtn").classList.remove("active");
+    updateMapModeHint(areaAssignMode ? "エリア指定中: 保存したい範囲の1点目をクリックしてください。" : "");
     showControlPanel("areas");
   });
   $("#nameLabelBtn").addEventListener("click", () => {

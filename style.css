@@ -521,6 +521,26 @@ input[type="color"] {
   box-shadow: 0 8px 26px rgba(31, 42, 68, 0.14);
 }
 
+.map-mode-hint {
+  position: absolute;
+  z-index: 4;
+  left: 18px;
+  top: 18px;
+  max-width: min(420px, calc(100% - 36px));
+  padding: 10px 12px;
+  border: 1px solid rgba(20, 108, 148, 0.28);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--ink);
+  box-shadow: 0 8px 26px rgba(31, 42, 68, 0.14);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.map-mode-hint.hidden {
+  display: none;
+}
+
 .operations {
   display: none;
 }
