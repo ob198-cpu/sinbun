@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>新聞配達マップ共有</title>
-  <link rel="stylesheet" href="style.css?v=20260530-19">
+  <link rel="stylesheet" href="style.css?v=20260530-20">
 </head>
 <body>
   <div class="app-shell">
@@ -65,20 +65,6 @@
           <label>エリア
             <select id="areaSelect"></select>
           </label>
-          <div class="form-grid">
-            <label>予定時刻
-              <input id="plannedTime" type="time">
-            </label>
-          </div>
-          <label>状態
-            <select id="status">
-              <option value="planned">配達予定</option>
-              <option value="delivered">配達完了</option>
-              <option value="missed">未配</option>
-              <option value="wrong">誤配</option>
-              <option value="hold">保留</option>
-            </select>
-          </label>
           <label>メモ
             <textarea id="note" rows="3" placeholder="ポスト位置、休止、注意事項など"></textarea>
           </label>
@@ -88,22 +74,6 @@
           </div>
         </form>
 
-        <div class="panel-subsection">
-          <div class="panel-heading">
-            <h2>名簿引用</h2>
-            <button id="clearRosterBtn" type="button" class="ghost">名簿クリア</button>
-          </div>
-          <label>名簿貼り付け
-            <textarea id="rosterInput" rows="5" placeholder="名前,住所,エリア,メモ&#10;山田様,札幌市中央区北1条西2丁目,中央北コース,集合ポスト左上"></textarea>
-          </label>
-          <div class="roster-actions">
-            <button id="downloadRosterTemplateBtn" type="button">入力用名簿出力</button>
-            <button id="importRosterFileBtn" type="button">入力用名簿取り込み</button>
-            <input id="rosterFileInput" type="file" accept=".xlsx,.xls,.html,.csv,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
-          </div>
-          <p class="hint-text">候補を地図の家の位置へドラッグすると、その場所に登録できます。</p>
-          <div id="rosterList" class="roster-list"></div>
-        </div>
       </section>
 
       <section class="panel control-panel hidden" data-control-panel="areas">
@@ -226,6 +196,6 @@
   </template>
 
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-  <script src="app.js?v=20260530-19"></script>
+  <script src="app.js?v=20260530-20"></script>
 </body>
 </html>

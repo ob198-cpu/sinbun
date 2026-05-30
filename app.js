@@ -229,15 +229,17 @@ function normalizeStop(formData) {
 }
 
 function collectForm() {
+  const id = $("#stopId").value;
+  const existing = stops.find(stop => stop.id === id);
   return normalizeStop({
-    id: $("#stopId").value,
+    id,
     orderNo: $("#orderNo").value,
     customerName: $("#customerName").value,
     address: $("#address").value,
     areaId: $("#areaSelect").value,
-    plannedTime: $("#plannedTime").value,
+    plannedTime: existing?.plannedTime || "",
     copies: 1,
-    status: $("#status").value,
+    status: existing?.status || "planned",
     note: $("#note").value
   });
 }
@@ -278,7 +280,6 @@ function importRosterItems(items) {
 function clearForm() {
   $("#stopForm").reset();
   $("#stopId").value = "";
-  $("#status").value = "planned";
   $("#orderNo").value = nextOrder();
   $("#areaSelect").value = currentAreaId === "all" ? (areas[0]?.id || DEFAULT_AREA_ID) : currentAreaId;
 }
@@ -309,8 +310,6 @@ function editStop(id) {
   $("#customerName").value = stop.customerName;
   $("#address").value = stop.address;
   $("#areaSelect").value = stop.areaId || DEFAULT_AREA_ID;
-  $("#plannedTime").value = stop.plannedTime || "";
-  $("#status").value = stop.status;
   $("#note").value = stop.note || "";
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -412,7 +411,7 @@ function renderList() {
     node.querySelector("h3").textContent = stop.customerName;
     node.querySelector(".address-line").textContent = stop.address;
     node.querySelector(".meta-line").textContent =
-      `${area.name} / ${stop.plannedTime || "--:--"} / 更新 ${formatDateTime(stop.updatedAt)}`;
+      `${area.name} / 更新 ${formatDateTime(stop.updatedAt)}`;
     node.querySelector(".note-line").textContent = stop.note || "メモなし";
     const pill = node.querySelector(".status-pill");
     pill.textContent = statusInfo.label;
@@ -750,8 +749,6 @@ function fillFormFromRoster(item) {
   $("#customerName").value = item.name;
   $("#address").value = item.address;
   $("#areaSelect").value = existingAreaIdByName(item.areaName || areaById(item.areaId).name);
-  $("#plannedTime").value = "";
-  $("#status").value = "planned";
   $("#note").value = item.note || "";
 }
 
@@ -1427,13 +1424,12 @@ function csvCell(value) {
 }
 
 function exportCsv() {
-  const headers = ["配達順", "購読者・建物名", "住所", "エリア", "予定時刻", "状態", "メモ", "緯度", "経度", "更新日時"];
+  const headers = ["配達順", "購読者・建物名", "住所", "エリア", "状態", "メモ", "緯度", "経度", "更新日時"];
   const rows = stops.map(stop => [
     stop.orderNo,
     stop.customerName,
     stop.address,
     areaById(stop.areaId).name,
-    stop.plannedTime,
     STATUS[stop.status]?.label || stop.status,
     stop.note,
     stop.lat,
@@ -1642,50 +1638,6 @@ function bindEvents() {
     showControlPanel("roster");
   });
   $("#clearFormBtn").addEventListener("click", clearForm);
-  $("#clearRosterBtn").addEventListener("click", () => {
-    roster = [];
-    selectedRosterId = "";
-    saveState();
-    renderRosterList();
-  });
-  $("#rosterList").addEventListener("click", event => {
-    const target = event.target.closest("[data-roster-id]");
-    if (!target) return;
-    pendingPlaceStopId = "";
-    selectRosterItem(target.dataset.rosterId);
-  });
-  $("#downloadRosterTemplateBtn").addEventListener("click", downloadRosterTemplate);
-  $("#importRosterFileBtn").addEventListener("click", () => $("#rosterFileInput").click());
-  $("#rosterFileInput").addEventListener("change", event => {
-    const file = event.target.files && event.target.files[0];
-    if (!file) return;
-    const isRealExcel = /\.xlsx$/i.test(file.name);
-    const reader = new FileReader();
-    reader.onload = () => {
-      const imported = isRealExcel
-        ? parseRosterWorkbookArrayBuffer(reader.result)
-        : parseRosterWorkbookText(String(reader.result || ""));
-      if (!imported.length) {
-        alert("Excelから名簿を読み込めませんでした。名前と住所を入力してください。");
-        return;
-      }
-    importRosterItems(imported);
-    $("#rosterInput").value = roster.map(item => [
-      item.name,
-      item.address,
-      item.areaName || areaById(item.areaId).name,
-      item.note || ""
-    ].map(csvCell).join(",")).join("\n");
-      showControlPanel("roster");
-      render();
-    };
-    if (isRealExcel) {
-      reader.readAsArrayBuffer(file);
-    } else {
-      reader.readAsText(file, "utf-8");
-    }
-    event.target.value = "";
-  });
   $("#areaForm").addEventListener("submit", event => {
     event.preventDefault();
     const name = $("#areaName").value.trim();
