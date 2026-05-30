@@ -1259,11 +1259,13 @@ function makeGoogleRouteLink() {
 }
 
 async function copyText(text) {
-  $("#shareOutput").value = text;
+  const output = $("#shareOutput");
+  if (output) output.value = text;
   try {
     await navigator.clipboard.writeText(text);
   } catch {
-    $("#shareOutput").select();
+    if (!output) return;
+    output.select();
     document.execCommand("copy");
   }
 }
@@ -1634,28 +1636,7 @@ function bindEvents() {
     localStorage.setItem(LABEL_STORAGE, String(showNameLabels));
     syncMap();
   });
-  $("#shareBtn").addEventListener("click", () => copyText(makeShareLink()));
-  $("#googleRouteBtn").addEventListener("click", () => {
-    const link = makeGoogleRouteLink();
-    if (!link) {
-      alert("Googleルートを作るには住所つきの配達先が2件以上必要です。");
-      return;
-    }
-    copyText(link);
-  });
-  $("#copySummaryBtn").addEventListener("click", () => copyText(summaryText()));
   $("#exportCsvBtn").addEventListener("click", exportCsv);
-  $("#resetBtn").addEventListener("click", () => {
-    if (!confirm("配達データをすべて削除します。よろしいですか？")) return;
-    stops = [];
-    areas = defaultAreas();
-    drawnLines = [];
-    currentAreaId = "all";
-    saveState();
-    render();
-    syncMap();
-    clearForm();
-  });
 }
 
 function init() {
