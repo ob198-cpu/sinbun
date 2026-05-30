@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>新聞配達マップ共有</title>
-  <link rel="stylesheet" href="style.css?v=20260530-22">
+  <link rel="stylesheet" href="style.css?v=20260530-23">
 </head>
 <body>
   <div class="app-shell">
@@ -41,7 +41,9 @@
         <label>登録済み検索
           <input id="registeredSearch" type="search" placeholder="名前・住所で検索">
         </label>
-        <div id="registeredAreaTabs" class="area-tabs registered-area-tabs" role="tablist" aria-label="名簿エリア切替"></div>
+        <label class="registered-area-select-label">エリア選択
+          <select id="registeredAreaSelect"></select>
+        </label>
         <p class="hint-text pin-add-hint">ピン追加ボタンを押した後に地図上をクリックしてください。</p>
         <div id="registeredList" class="registered-list"></div>
       </section>
@@ -201,6 +203,6 @@
   </template>
 
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-  <script src="app.js?v=20260530-22"></script>
+  <script src="app.js?v=20260530-23"></script>
 </body>
 </html>

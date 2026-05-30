@@ -456,24 +456,20 @@ function render() {
 }
 
 function renderRegisteredAreaTabs() {
-  const tabs = $("#registeredAreaTabs");
-  if (!tabs) return;
-  tabs.innerHTML = "";
-  const allTab = document.createElement("button");
-  allTab.type = "button";
-  allTab.className = `area-tab ${currentRosterAreaId === "all" ? "active" : ""}`;
-  allTab.textContent = `全エリア (${stops.length})`;
-  allTab.dataset.rosterAreaId = "all";
-  tabs.appendChild(allTab);
+  const select = $("#registeredAreaSelect");
+  if (!select) return;
+  select.innerHTML = "";
+  const allOption = document.createElement("option");
+  allOption.value = "all";
+  allOption.textContent = `全エリア (${stops.length})`;
+  select.appendChild(allOption);
   areas.forEach(area => {
-    const tab = document.createElement("button");
-    tab.type = "button";
-    tab.className = `area-tab ${currentRosterAreaId === area.id ? "active" : ""}`;
-    tab.dataset.rosterAreaId = area.id;
-    tab.style.setProperty("--tab-color", area.color);
-    tab.textContent = `${area.name} (${stops.filter(stop => stop.areaId === area.id).length})`;
-    tabs.appendChild(tab);
+    const option = document.createElement("option");
+    option.value = area.id;
+    option.textContent = `${area.name} (${stops.filter(stop => stop.areaId === area.id).length})`;
+    select.appendChild(option);
   });
+  select.value = currentRosterAreaId;
 }
 
 function renderAreaControls() {
@@ -1618,10 +1614,8 @@ function bindEvents() {
     showControlPanel("new");
   });
   $("#registeredSearch").addEventListener("input", renderRegisteredList);
-  $("#registeredAreaTabs").addEventListener("click", event => {
-    const button = event.target.closest("[data-roster-area-id]");
-    if (!button) return;
-    currentRosterAreaId = button.dataset.rosterAreaId;
+  $("#registeredAreaSelect").addEventListener("change", event => {
+    currentRosterAreaId = event.target.value;
     expandedRegisteredId = "";
     renderRegisteredAreaTabs();
     renderRegisteredList();
