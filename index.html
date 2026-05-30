@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>新聞配達マップ共有</title>
-  <link rel="stylesheet" href="style.css?v=20260530-14">
+  <link rel="stylesheet" href="style.css?v=20260530-15">
 </head>
 <body>
   <div class="app-shell">
@@ -20,13 +20,6 @@
         <span class="live-dot" aria-label="共有中"></span>
       </header>
 
-      <section class="panel compact-stats" aria-label="配達状況">
-        <div><strong id="statPlanned">0</strong><span>予定</span></div>
-        <div><strong id="statDelivered">0</strong><span>完了</span></div>
-        <div><strong id="statMissed">0</strong><span>未配</span></div>
-        <div><strong id="statWrong">0</strong><span>誤配</span></div>
-      </section>
-
       <nav class="control-switch" aria-label="操作切替">
         <button type="button" class="control-tab active" data-control-target="roster">名簿</button>
         <button type="button" class="control-tab" data-control-target="areas">エリア</button>
@@ -39,6 +32,12 @@
           <h2>名簿</h2>
           <button id="showNewBtn" type="button" class="ghost">追加</button>
         </div>
+        <section class="compact-stats" aria-label="配達状況">
+          <div><strong id="statPlanned">0</strong><span>予定</span></div>
+          <div><strong id="statDelivered">0</strong><span>完了</span></div>
+          <div><strong id="statMissed">0</strong><span>未配</span></div>
+          <div><strong id="statWrong">0</strong><span>誤配</span></div>
+        </section>
         <label>登録済み検索
           <input id="registeredSearch" type="search" placeholder="名前・住所で検索">
         </label>
@@ -227,6 +226,6 @@
   </template>
 
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-  <script src="app.js?v=20260530-14"></script>
+  <script src="app.js?v=20260530-15"></script>
 </body>
 </html>

@@ -930,7 +930,23 @@ input[type="color"] {
   }
 
   .compact-stats {
-    display: none;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+    margin-bottom: 8px;
+    padding: 8px;
+  }
+
+  .compact-stats div {
+    padding: 5px 4px;
+  }
+
+  .compact-stats strong {
+    font-size: 17px;
+  }
+
+  .compact-stats span {
+    font-size: 10px;
   }
 
   .control-switch {
