@@ -589,6 +589,20 @@ input[type="color"] {
   user-select: none;
 }
 
+.draw-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.draw-overlay.hidden {
+  display: none;
+}
+
 .map-mode-actions {
   display: flex;
   gap: 8px;

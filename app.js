@@ -851,11 +851,12 @@ function clearAreaSelectionPreview() {
 }
 
 function setupLineDrawing() {
-  const mapNode = $("#map");
-  mapNode.addEventListener("pointerdown", event => {
+  const drawOverlay = $("#drawOverlay");
+  drawOverlay.addEventListener("pointerdown", event => {
     if (areaAssignMode && mapProjection) {
       event.preventDefault();
-      mapNode.setPointerCapture?.(event.pointerId);
+      event.stopPropagation();
+      drawOverlay.setPointerCapture?.(event.pointerId);
       areaSelectionStart = areaPointFromPointer(event);
       isSelectingArea = !!areaSelectionStart;
       if (areaSelectionStart) {
@@ -866,29 +867,33 @@ function setupLineDrawing() {
     }
     if (!drawLineMode || !mapProjection) return;
     event.preventDefault();
-    mapNode.setPointerCapture?.(event.pointerId);
+    event.stopPropagation();
+    drawOverlay.setPointerCapture?.(event.pointerId);
     isDrawingLine = true;
     drawingLineStart = pointToLatLng(event);
     drawingLinePath = [drawingLineStart];
     drawDrawingLine();
   });
-  mapNode.addEventListener("pointermove", event => {
+  drawOverlay.addEventListener("pointermove", event => {
     if (isSelectingArea && areaAssignMode && mapProjection) {
       event.preventDefault();
+      event.stopPropagation();
       const point = areaPointFromPointer(event);
       if (point) drawAreaSelectionPreview(areaBoundsFromPoints(areaSelectionStart, point));
       return;
     }
     if (!isDrawingLine || !drawLineMode || !mapProjection) return;
     event.preventDefault();
+    event.stopPropagation();
     const point = pointToLatLng(event);
     drawingLinePath = drawLineType === "straight" ? [drawingLineStart, point] : [...drawingLinePath, point];
     drawDrawingLine();
   });
-  mapNode.addEventListener("pointerup", event => {
+  drawOverlay.addEventListener("pointerup", event => {
     if (isSelectingArea && areaAssignMode && mapProjection) {
       event.preventDefault();
-      if (mapNode.hasPointerCapture?.(event.pointerId)) mapNode.releasePointerCapture(event.pointerId);
+      event.stopPropagation();
+      if (drawOverlay.hasPointerCapture?.(event.pointerId)) drawOverlay.releasePointerCapture(event.pointerId);
       const point = areaPointFromPointer(event);
       isSelectingArea = false;
       if (point) finishAreaSelection(point);
@@ -896,11 +901,19 @@ function setupLineDrawing() {
     }
     if (!isDrawingLine || !drawLineMode || !mapProjection) return;
     event.preventDefault();
-    if (mapNode.hasPointerCapture?.(event.pointerId)) mapNode.releasePointerCapture(event.pointerId);
+    event.stopPropagation();
+    if (drawOverlay.hasPointerCapture?.(event.pointerId)) drawOverlay.releasePointerCapture(event.pointerId);
     isDrawingLine = false;
     const point = pointToLatLng(event);
     drawingLinePath = drawLineType === "straight" ? [drawingLineStart, point] : [...drawingLinePath, point];
     finishDrawnLine();
+  });
+  drawOverlay.addEventListener("pointercancel", event => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (drawOverlay.hasPointerCapture?.(event.pointerId)) drawOverlay.releasePointerCapture(event.pointerId);
+    isSelectingArea = false;
+    isDrawingLine = false;
   });
 }
 
@@ -1312,6 +1325,7 @@ function lockMapGestures() {
     disableDoubleClickZoom: true
   });
   $("#map")?.classList.add("map-gesture-locked");
+  $("#drawOverlay")?.classList.remove("hidden");
 }
 
 function unlockMapGestures() {
@@ -1324,6 +1338,7 @@ function unlockMapGestures() {
     disableDoubleClickZoom: false
   });
   $("#map")?.classList.remove("map-gesture-locked");
+  $("#drawOverlay")?.classList.add("hidden");
 }
 
 function showMobileAreaHint() {
