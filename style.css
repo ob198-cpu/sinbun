@@ -892,7 +892,7 @@ input[type="color"] {
     max-height: 78vh;
     min-height: 94px;
     overflow: auto;
-    padding: 34px 10px 10px;
+    padding: 0 10px 10px;
     border-top: 1px solid var(--line);
     border-bottom: 0;
     background: rgba(238, 243, 246, 0.96);
@@ -902,13 +902,11 @@ input[type="color"] {
   .panel-resize-handle {
     display: grid;
     place-items: center;
-    position: absolute;
+    position: sticky;
     top: 0;
-    left: 0;
-    right: 0;
     z-index: 12;
     height: 28px;
-    margin: 0;
+    margin: 0 -10px;
     border-bottom: 1px solid rgba(217, 222, 232, 0.9);
     background: rgba(255, 255, 255, 0.92);
     color: var(--accent);
@@ -932,28 +930,20 @@ input[type="color"] {
   }
 
   .compact-stats {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 5px;
-    margin-bottom: 8px;
-    padding: 8px;
-  }
-
-  .compact-stats div {
-    padding: 5px 4px;
-  }
-
-  .compact-stats strong {
-    font-size: 17px;
-  }
-
-  .compact-stats span {
-    font-size: 10px;
+    display: none;
   }
 
   .control-switch {
+    position: sticky;
+    top: 28px;
+    z-index: 11;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 5px;
-    margin-bottom: 8px;
+    margin: 0 -10px 8px;
+    padding: 6px 10px;
+    border-bottom: 1px solid rgba(217, 222, 232, 0.9);
+    background: rgba(238, 243, 246, 0.96);
+    box-shadow: 0 8px 18px rgba(31, 42, 68, 0.08);
   }
 
   .control-tab {
