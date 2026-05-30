@@ -584,6 +584,18 @@ input[type="color"] {
   display: none;
 }
 
+.map-mode-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.map-mode-actions button {
+  min-height: 34px;
+  font-weight: 800;
+}
+
 .operations {
   display: none;
 }
@@ -775,7 +787,9 @@ input[type="color"] {
   }
 
   .app-shell {
-    height: 100vh;
+    position: fixed;
+    inset: 0;
+    height: 100dvh;
     display: block;
     overflow: hidden;
   }
@@ -900,14 +914,16 @@ input[type="color"] {
   }
 
   .workspace {
-    height: 100vh;
+    position: fixed;
+    inset: 0;
+    height: 100dvh;
     grid-template-rows: 1fr;
   }
 
   .map-stage,
   .map-canvas {
-    min-height: 100vh;
-    height: 100vh;
+    min-height: 100dvh;
+    height: 100dvh;
   }
 
   .list-header,
@@ -949,6 +965,23 @@ input[type="color"] {
     right: 8px;
     max-width: none;
     padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .map-mode-hint strong,
+  .map-mode-hint span {
+    display: block;
+  }
+
+  .map-mode-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .map-mode-actions button {
+    min-height: 36px;
+    padding: 6px 4px;
     font-size: 12px;
   }
 }

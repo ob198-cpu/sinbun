@@ -302,11 +302,24 @@ function saveAreaBounds(name, boundsValue) {
   areaAssignMode = false;
   areaSelectionStart = null;
   clearAreaSelectionPreview();
+  $("#areaAssignBtn")?.classList.remove("active");
   updateMapModeHint("");
   saveState();
   render();
   syncMap({ fit: false });
   jumpToArea(area.id);
+}
+
+function saveVisibleMapArea() {
+  if (!map || !window.google?.maps) return;
+  const visibleBounds = map.getBounds();
+  if (!visibleBounds) {
+    alert("地図の読み込み後にもう一度押してください。");
+    return;
+  }
+  const name = prompt("エリア名を入力してください", `エリア${areas.length + 1}`);
+  if (!name || !name.trim()) return;
+  saveAreaBounds(name.trim(), visibleBounds.toJSON());
 }
 
 function moveStopPosition(id, latLng) {
@@ -762,6 +775,10 @@ function finishAreaSelection(endPoint) {
     return;
   }
   saveAreaBounds(name.trim(), boundsValue);
+}
+
+function isMobileViewport() {
+  return window.matchMedia("(max-width: 640px)").matches;
 }
 
 function areaPointFromPointer(event) {
@@ -1248,6 +1265,29 @@ function updateMapModeHint(message) {
   hint.classList.toggle("hidden", !message);
 }
 
+function showMobileAreaHint() {
+  const hint = $("#mapModeHint");
+  if (!hint) return;
+  hint.innerHTML = `
+    <strong>エリア指定</strong>
+    <span>地図を保存したい範囲に合わせてから押してください。</span>
+    <div class="map-mode-actions">
+      <button id="saveVisibleAreaBtn" type="button">今見えている範囲を保存</button>
+      <button id="dragAreaBtn" type="button">ドラッグで指定</button>
+    </div>
+  `;
+  hint.classList.remove("hidden");
+  $("#saveVisibleAreaBtn")?.addEventListener("click", saveVisibleMapArea);
+  $("#dragAreaBtn")?.addEventListener("click", () => {
+    areaAssignMode = true;
+    areaSelectionStart = null;
+    isSelectingArea = false;
+    clearAreaSelectionPreview();
+    $("#areaAssignBtn").classList.add("active");
+    updateMapModeHint("エリア指定中: 地図上をドラッグして長方形の範囲を指定してください。");
+  });
+}
+
 function showLineTypeMenu(show) {
   $("#lineTypeMenu")?.classList.toggle("hidden", !show);
 }
@@ -1475,14 +1515,19 @@ function bindEvents() {
   $("#straightLineBtn").addEventListener("click", () => startLineDrawing("straight"));
   $("#curveLineBtn").addEventListener("click", () => startLineDrawing("curve"));
   $("#areaAssignBtn").addEventListener("click", () => {
-    areaAssignMode = !areaAssignMode;
+    const nextAreaMode = !$("#areaAssignBtn").classList.contains("active");
     stopLineDrawing();
+    areaAssignMode = nextAreaMode && !isMobileViewport();
     areaSelectionStart = null;
     isSelectingArea = false;
     clearAreaSelectionPreview();
-    $("#areaAssignBtn").classList.toggle("active", areaAssignMode);
+    $("#areaAssignBtn").classList.toggle("active", nextAreaMode);
     $("#drawLineBtn").classList.remove("active");
-    updateMapModeHint(areaAssignMode ? "エリア指定中: 地図上をドラッグして長方形の範囲を指定してください。" : "");
+    if (nextAreaMode && isMobileViewport()) {
+      showMobileAreaHint();
+    } else {
+      updateMapModeHint(areaAssignMode ? "エリア指定中: 地図上をドラッグして長方形の範囲を指定してください。" : "");
+    }
     showControlPanel("areas");
   });
   $("#nameLabelBtn").addEventListener("click", () => {
