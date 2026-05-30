@@ -62,6 +62,7 @@ let drawLineMode = false;
 let drawLineType = "curve";
 let areaAssignMode = false;
 let areaSelectionStart = null;
+let isSelectingArea = false;
 let areaSelectionPreview = null;
 let areaRectangles = [];
 let map;
@@ -605,10 +606,6 @@ window.initMap = function initMap() {
   setupMapDrop();
   setupLineDrawing();
   map.addListener("click", event => {
-    if (areaAssignMode) {
-      handleAreaSelectionClick(event.latLng);
-      return;
-    }
     if (pendingPlaceStopId) {
       setStopPosition(pendingPlaceStopId, event.latLng);
       return;
@@ -625,33 +622,34 @@ window.initMap = function initMap() {
   syncMap({ fit: true });
 };
 
-function handleAreaSelectionClick(latLng) {
-  if (!areaSelectionStart) {
-    areaSelectionStart = { lat: latLng.lat(), lng: latLng.lng() };
-    drawAreaSelectionPreview(areaBoundsFromPoints(areaSelectionStart, areaSelectionStart));
-    updateMapModeHint("エリア指定中: 範囲の反対側をクリックしてください。");
-    return;
-  }
-  const boundsValue = areaBoundsFromPoints(areaSelectionStart, { lat: latLng.lat(), lng: latLng.lng() });
+function finishAreaSelection(endPoint) {
+  if (!areaSelectionStart) return;
+  const boundsValue = areaBoundsFromPoints(areaSelectionStart, endPoint);
   drawAreaSelectionPreview(boundsValue);
   if (!confirm("この範囲をエリアとして保存しますか？")) {
     areaSelectionStart = null;
+    isSelectingArea = false;
     clearAreaSelectionPreview();
+    updateMapModeHint(areaAssignMode ? "エリア指定中: 地図上をドラッグして範囲を指定してください。" : "");
     return;
   }
   const name = prompt("エリア名を入力してください", `エリア${areas.length + 1}`);
   if (!name || !name.trim()) {
     areaSelectionStart = null;
+    isSelectingArea = false;
     clearAreaSelectionPreview();
+    updateMapModeHint(areaAssignMode ? "エリア指定中: 地図上をドラッグして範囲を指定してください。" : "");
     return;
   }
   saveAreaBounds(name.trim(), boundsValue);
 }
 
-function handleAreaSelectionPoint(point) {
+function areaPointFromPointer(event) {
   if (!mapProjection) return;
+  const rect = $("#map").getBoundingClientRect();
+  const point = new google.maps.Point(event.clientX - rect.left, event.clientY - rect.top);
   const latLng = mapProjection.fromContainerPixelToLatLng(point);
-  if (latLng) handleAreaSelectionClick(latLng);
+  return latLng ? { lat: latLng.lat(), lng: latLng.lng() } : null;
 }
 
 function areaBoundsFromPoints(a, b) {
@@ -688,8 +686,12 @@ function setupLineDrawing() {
   mapNode.addEventListener("pointerdown", event => {
     if (areaAssignMode && mapProjection) {
       event.preventDefault();
-      const rect = mapNode.getBoundingClientRect();
-      handleAreaSelectionPoint(new google.maps.Point(event.clientX - rect.left, event.clientY - rect.top));
+      areaSelectionStart = areaPointFromPointer(event);
+      isSelectingArea = !!areaSelectionStart;
+      if (areaSelectionStart) {
+        drawAreaSelectionPreview(areaBoundsFromPoints(areaSelectionStart, areaSelectionStart));
+        updateMapModeHint("エリア指定中: そのままドラッグして長方形を作ってください。");
+      }
       return;
     }
     if (!drawLineMode || !mapProjection) return;
@@ -700,6 +702,12 @@ function setupLineDrawing() {
     drawDrawingLine();
   });
   mapNode.addEventListener("pointermove", event => {
+    if (isSelectingArea && areaAssignMode && mapProjection) {
+      event.preventDefault();
+      const point = areaPointFromPointer(event);
+      if (point) drawAreaSelectionPreview(areaBoundsFromPoints(areaSelectionStart, point));
+      return;
+    }
     if (!isDrawingLine || !drawLineMode || !mapProjection) return;
     event.preventDefault();
     const point = pointToLatLng(event);
@@ -707,6 +715,13 @@ function setupLineDrawing() {
     drawDrawingLine();
   });
   mapNode.addEventListener("pointerup", event => {
+    if (isSelectingArea && areaAssignMode && mapProjection) {
+      event.preventDefault();
+      const point = areaPointFromPointer(event);
+      isSelectingArea = false;
+      if (point) finishAreaSelection(point);
+      return;
+    }
     if (!isDrawingLine || !drawLineMode || !mapProjection) return;
     event.preventDefault();
     isDrawingLine = false;
@@ -1293,10 +1308,11 @@ function bindEvents() {
     areaAssignMode = !areaAssignMode;
     drawLineMode = false;
     areaSelectionStart = null;
+    isSelectingArea = false;
     clearAreaSelectionPreview();
     $("#areaAssignBtn").classList.toggle("active", areaAssignMode);
     $("#drawLineBtn").classList.remove("active");
-    updateMapModeHint(areaAssignMode ? "エリア指定中: 保存したい範囲の1点目をクリックしてください。" : "");
+    updateMapModeHint(areaAssignMode ? "エリア指定中: 地図上をドラッグして長方形の範囲を指定してください。" : "");
     showControlPanel("areas");
   });
   $("#nameLabelBtn").addEventListener("click", () => {
