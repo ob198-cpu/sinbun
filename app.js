@@ -744,6 +744,9 @@ function finishDrawnLine() {
     comment: ""
   });
   drawingLinePath = [];
+  drawLineMode = false;
+  $("#drawLineBtn")?.classList.remove("active");
+  updateMapModeHint("");
   saveState();
   syncMap({ fit: false });
 }
@@ -764,11 +767,21 @@ function drawSavedLines() {
       map,
       strokeColor: "#bd3d32",
       strokeOpacity: 0.95,
-      strokeWeight: 4,
+      strokeWeight: 5,
+      clickable: true
+    });
+    const hitArea = new google.maps.Polyline({
+      path: line.path,
+      map,
+      strokeColor: "#bd3d32",
+      strokeOpacity: 0.01,
+      strokeWeight: 22,
       clickable: true
     });
     overlay.addListener("click", event => openLineMenu(line.id, event.latLng));
+    hitArea.addListener("click", event => openLineMenu(line.id, event.latLng));
     drawnLineOverlays.push(overlay);
+    drawnLineOverlays.push(hitArea);
   });
 }
 
