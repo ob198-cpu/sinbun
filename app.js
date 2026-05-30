@@ -335,7 +335,7 @@ function renderList() {
     const placeButton = document.createElement("button");
     placeButton.type = "button";
     placeButton.dataset.action = "place";
-    placeButton.textContent = pendingPlaceStopId === stop.id ? "位置指定中" : "位置指定";
+    placeButton.textContent = pendingPlaceStopId === stop.id ? "ピン追加中" : "ピン追加";
     node.querySelector(".card-actions").insertBefore(placeButton, node.querySelector("[data-action='edit']"));
 
     node.querySelectorAll("button").forEach(button => {
@@ -475,7 +475,7 @@ function renderRegisteredList() {
         <p>${escapeHtml(stop.address)}</p>
         <p>${escapeHtml(areaById(stop.areaId).name)} / ${escapeHtml(stop.copies || 1)}部${stop.lat && stop.lng ? " / 位置登録済み" : " / 位置未登録"}</p>
         <div class="card-actions">
-          <button type="button" data-registered-action="place" data-id="${escapeHtml(stop.id)}">${pendingPlaceStopId === stop.id ? "位置指定中" : "位置指定"}</button>
+          <button type="button" data-registered-action="place" data-id="${escapeHtml(stop.id)}">${pendingPlaceStopId === stop.id ? "ピン追加中" : "ピン追加"}</button>
           <button type="button" data-registered-action="delivered" data-id="${escapeHtml(stop.id)}">完了</button>
           <button type="button" data-registered-action="missed" data-id="${escapeHtml(stop.id)}">未配</button>
           <button type="button" data-registered-action="wrong" data-id="${escapeHtml(stop.id)}">誤配</button>
