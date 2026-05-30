@@ -247,12 +247,16 @@ function collectForm() {
 }
 
 function stopFromRoster(item, position = {}) {
+  const fallbackAreaId = existingAreaIdByName(item.areaName || areaById(item.areaId).name);
+  const positionedAreaId = position.lat && position.lng
+    ? areaIdForPosition({ lat: Number(position.lat), lng: Number(position.lng) }, fallbackAreaId)
+    : fallbackAreaId;
   return normalizeStop({
     id: "",
     orderNo: nextOrder(),
     customerName: item.name,
     address: item.address,
-    areaId: existingAreaIdByName(item.areaName || areaById(item.areaId).name),
+    areaId: positionedAreaId,
     plannedTime: "",
     copies: item.copies || 1,
     status: "planned",
@@ -379,16 +383,48 @@ function setStatus(id, status) {
   syncMap();
 }
 
+function positionObjectFromLatLng(latLng) {
+  return {
+    lat: typeof latLng.lat === "function" ? latLng.lat() : Number(latLng.lat),
+    lng: typeof latLng.lng === "function" ? latLng.lng() : Number(latLng.lng)
+  };
+}
+
+function pointInsideAreaBounds(point, area) {
+  if (!area?.bounds) return false;
+  return point.lat <= area.bounds.north &&
+    point.lat >= area.bounds.south &&
+    point.lng <= area.bounds.east &&
+    point.lng >= area.bounds.west;
+}
+
+function areaIdForPosition(point, fallbackAreaId) {
+  const matching = [...areas].reverse().find(area => pointInsideAreaBounds(point, area));
+  return matching?.id || fallbackAreaId || DEFAULT_AREA_ID;
+}
+
 function setStopPosition(id, latLng) {
   const stop = stops.find(item => item.id === id);
   if (!stop) return;
-  stop.lat = latLng.lat();
-  stop.lng = latLng.lng();
+  const point = positionObjectFromLatLng(latLng);
+  stop.lat = point.lat;
+  stop.lng = point.lng;
+  stop.areaId = areaIdForPosition(point, stop.areaId);
   stop.updatedAt = new Date().toISOString();
   pendingPlaceStopId = "";
   saveState();
   render();
   syncMap();
+}
+
+function assignStopsInsideArea(area) {
+  stops.forEach(stop => {
+    if (!stop.lat || !stop.lng) return;
+    if (pointInsideAreaBounds({ lat: Number(stop.lat), lng: Number(stop.lng) }, area)) {
+      stop.areaId = area.id;
+      stop.updatedAt = new Date().toISOString();
+    }
+  });
 }
 
 function saveAreaBounds(name, boundsValue) {
@@ -399,6 +435,7 @@ function saveAreaBounds(name, boundsValue) {
     bounds: boundsValue
   };
   areas.push(area);
+  assignStopsInsideArea(area);
   currentAreaId = area.id;
   areaAssignMode = false;
   areaSelectionStart = null;
@@ -416,8 +453,10 @@ function saveAreaBounds(name, boundsValue) {
 function moveStopPosition(id, latLng) {
   const stop = stops.find(item => item.id === id);
   if (!stop) return;
-  stop.lat = latLng.lat();
-  stop.lng = latLng.lng();
+  const point = positionObjectFromLatLng(latLng);
+  stop.lat = point.lat;
+  stop.lng = point.lng;
+  stop.areaId = areaIdForPosition(point, stop.areaId);
   stop.updatedAt = new Date().toISOString();
   saveState();
   render();
