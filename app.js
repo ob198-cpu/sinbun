@@ -1493,16 +1493,6 @@ function bindEvents() {
     showControlPanel("roster");
   });
   $("#clearFormBtn").addEventListener("click", clearForm);
-  $("#importRosterBtn").addEventListener("click", () => {
-    const imported = parseRosterText($("#rosterInput").value);
-    if (!imported.length) {
-      alert("名簿は「名前,住所,エリア,メモ」の形で貼り付けてください。");
-      return;
-    }
-    importRosterItems(imported);
-    showControlPanel("roster");
-    render();
-  });
   $("#clearRosterBtn").addEventListener("click", () => {
     roster = [];
     selectedRosterId = "";
