@@ -79,6 +79,7 @@ let drawingLinePath = [];
 let drawingLineStart = null;
 let drawingLineOverlay = null;
 let isDrawingLine = false;
+let mapGesturesLocked = false;
 let openInfoWindow;
 
 const $ = selector => document.querySelector(selector);
@@ -301,7 +302,9 @@ function saveAreaBounds(name, boundsValue) {
   currentAreaId = area.id;
   areaAssignMode = false;
   areaSelectionStart = null;
+  isSelectingArea = false;
   clearAreaSelectionPreview();
+  unlockMapGestures();
   $("#areaAssignBtn")?.classList.remove("active");
   updateMapModeHint("");
   saveState();
@@ -823,6 +826,7 @@ function setupLineDrawing() {
   mapNode.addEventListener("pointerdown", event => {
     if (areaAssignMode && mapProjection) {
       event.preventDefault();
+      mapNode.setPointerCapture?.(event.pointerId);
       areaSelectionStart = areaPointFromPointer(event);
       isSelectingArea = !!areaSelectionStart;
       if (areaSelectionStart) {
@@ -833,6 +837,7 @@ function setupLineDrawing() {
     }
     if (!drawLineMode || !mapProjection) return;
     event.preventDefault();
+    mapNode.setPointerCapture?.(event.pointerId);
     isDrawingLine = true;
     drawingLineStart = pointToLatLng(event);
     drawingLinePath = [drawingLineStart];
@@ -854,6 +859,7 @@ function setupLineDrawing() {
   mapNode.addEventListener("pointerup", event => {
     if (isSelectingArea && areaAssignMode && mapProjection) {
       event.preventDefault();
+      if (mapNode.hasPointerCapture?.(event.pointerId)) mapNode.releasePointerCapture(event.pointerId);
       const point = areaPointFromPointer(event);
       isSelectingArea = false;
       if (point) finishAreaSelection(point);
@@ -861,6 +867,7 @@ function setupLineDrawing() {
     }
     if (!isDrawingLine || !drawLineMode || !mapProjection) return;
     event.preventDefault();
+    if (mapNode.hasPointerCapture?.(event.pointerId)) mapNode.releasePointerCapture(event.pointerId);
     isDrawingLine = false;
     const point = pointToLatLng(event);
     drawingLinePath = drawLineType === "straight" ? [drawingLineStart, point] : [...drawingLinePath, point];
@@ -893,6 +900,7 @@ function finishDrawnLine() {
   drawingLineOverlay = null;
   if (drawingLinePath.length < 2) {
     drawingLinePath = [];
+    stopLineDrawing();
     return;
   }
   drawnLines.push({
@@ -1265,6 +1273,30 @@ function updateMapModeHint(message) {
   hint.classList.toggle("hidden", !message);
 }
 
+function lockMapGestures() {
+  if (!map || mapGesturesLocked) return;
+  mapGesturesLocked = true;
+  map.setOptions({
+    draggable: false,
+    gestureHandling: "none",
+    scrollwheel: false,
+    disableDoubleClickZoom: true
+  });
+  $("#map")?.classList.add("map-gesture-locked");
+}
+
+function unlockMapGestures() {
+  if (!map || !mapGesturesLocked) return;
+  mapGesturesLocked = false;
+  map.setOptions({
+    draggable: true,
+    gestureHandling: "greedy",
+    scrollwheel: true,
+    disableDoubleClickZoom: false
+  });
+  $("#map")?.classList.remove("map-gesture-locked");
+}
+
 function showMobileAreaHint() {
   const hint = $("#mapModeHint");
   if (!hint) return;
@@ -1283,6 +1315,7 @@ function showMobileAreaHint() {
     areaSelectionStart = null;
     isSelectingArea = false;
     clearAreaSelectionPreview();
+    lockMapGestures();
     $("#areaAssignBtn").classList.add("active");
     updateMapModeHint("エリア指定中: 地図上をドラッグして長方形の範囲を指定してください。");
   });
@@ -1298,6 +1331,7 @@ function startLineDrawing(type) {
   areaAssignMode = false;
   areaSelectionStart = null;
   clearAreaSelectionPreview();
+  lockMapGestures();
   showLineTypeMenu(false);
   $("#drawLineBtn").classList.add("active");
   $("#areaAssignBtn").classList.remove("active");
@@ -1309,6 +1343,7 @@ function stopLineDrawing() {
   isDrawingLine = false;
   drawingLinePath = [];
   drawingLineStart = null;
+  unlockMapGestures();
   showLineTypeMenu(false);
   $("#drawLineBtn").classList.remove("active");
   updateMapModeHint("");
@@ -1521,6 +1556,11 @@ function bindEvents() {
     areaSelectionStart = null;
     isSelectingArea = false;
     clearAreaSelectionPreview();
+    if (areaAssignMode) {
+      lockMapGestures();
+    } else {
+      unlockMapGestures();
+    }
     $("#areaAssignBtn").classList.toggle("active", nextAreaMode);
     $("#drawLineBtn").classList.remove("active");
     if (nextAreaMode && isMobileViewport()) {
