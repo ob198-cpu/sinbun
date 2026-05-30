@@ -210,7 +210,7 @@ function collectForm() {
     address: $("#address").value,
     areaId: $("#areaSelect").value,
     plannedTime: $("#plannedTime").value,
-    copies: $("#copies").value,
+    copies: 1,
     status: $("#status").value,
     note: $("#note").value
   });
@@ -252,7 +252,6 @@ function importRosterItems(items) {
 function clearForm() {
   $("#stopForm").reset();
   $("#stopId").value = "";
-  $("#copies").value = "1";
   $("#status").value = "planned";
   $("#orderNo").value = nextOrder();
   $("#areaSelect").value = currentAreaId === "all" ? (areas[0]?.id || DEFAULT_AREA_ID) : currentAreaId;
@@ -285,7 +284,6 @@ function editStop(id) {
   $("#address").value = stop.address;
   $("#areaSelect").value = stop.areaId || DEFAULT_AREA_ID;
   $("#plannedTime").value = stop.plannedTime || "";
-  $("#copies").value = stop.copies || 1;
   $("#status").value = stop.status;
   $("#note").value = stop.note || "";
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -388,7 +386,7 @@ function renderList() {
     node.querySelector("h3").textContent = stop.customerName;
     node.querySelector(".address-line").textContent = stop.address;
     node.querySelector(".meta-line").textContent =
-      `${area.name} / ${stop.plannedTime || "--:--"} / ${stop.copies || 1}部 / 更新 ${formatDateTime(stop.updatedAt)}`;
+      `${area.name} / ${stop.plannedTime || "--:--"} / 更新 ${formatDateTime(stop.updatedAt)}`;
     node.querySelector(".note-line").textContent = stop.note || "メモなし";
     const pill = node.querySelector(".status-pill");
     pill.textContent = statusInfo.label;
@@ -548,7 +546,7 @@ function renderRegisteredList() {
           <div class="registered-details">
             <span class="status-pill status-${escapeHtml(stop.status)}">${escapeHtml(statusInfo.label)}</span>
             <p>${escapeHtml(stop.address)}</p>
-            <p>${escapeHtml(areaById(stop.areaId).name)} / ${escapeHtml(stop.copies || 1)}部${stop.lat && stop.lng ? " / 位置登録済み" : " / 位置未登録"}</p>
+            <p>${escapeHtml(areaById(stop.areaId).name)}${stop.lat && stop.lng ? " / 位置登録済み" : " / 位置未登録"}</p>
             <div class="card-actions">
               <button type="button" data-registered-action="delivered" data-id="${escapeHtml(stop.id)}">完了</button>
               <button type="button" data-registered-action="missed" data-id="${escapeHtml(stop.id)}">未配</button>
@@ -579,8 +577,8 @@ function parseRosterText(text) {
         address: cols[1].trim(),
         areaName: areaName.trim(),
         areaId: areaName ? ensureAreaByName(areaName) : (areas[0]?.id || DEFAULT_AREA_ID),
-        copies: Number(cols[3]) || 1,
-        note: (cols[4] || "").trim()
+        copies: 1,
+        note: rosterNoteFromColumns(cols)
       };
     });
 }
@@ -592,8 +590,8 @@ function isRosterHeader(cols) {
 }
 
 function downloadRosterTemplate() {
-  const headers = ["名前", "住所", "エリア", "部数", "メモ"];
-  const sample = ["山田様", "札幌市中央区北1条西2丁目", "中央北コース", "1", "集合ポスト左上"];
+  const headers = ["名前", "住所", "エリア", "メモ"];
+  const sample = ["山田様", "札幌市中央区北1条西2丁目", "中央北コース", "集合ポスト左上"];
   const rows = [headers, sample]
     .map(row => `<tr>${row.map(cell => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`)
     .join("");
@@ -664,10 +662,15 @@ function rowsToRoster(rows) {
         address: cols[1].trim(),
         areaName: areaName.trim(),
         areaId: areaName ? ensureAreaByName(areaName) : (areas[0]?.id || DEFAULT_AREA_ID),
-        copies: Number(cols[3]) || 1,
-        note: (cols[4] || "").trim()
+        copies: 1,
+        note: rosterNoteFromColumns(cols)
       };
     });
+}
+
+function rosterNoteFromColumns(cols) {
+  if (cols.length >= 5 && /^\d+$/.test(String(cols[3] || "").trim())) return String(cols[4] || "").trim();
+  return String(cols[3] || "").trim();
 }
 
 function splitCsvLine(line) {
@@ -700,7 +703,6 @@ function fillFormFromRoster(item) {
   $("#address").value = item.address;
   $("#areaSelect").value = item.areaId || ensureAreaByName(item.areaName);
   $("#plannedTime").value = "";
-  $("#copies").value = item.copies || 1;
   $("#status").value = "planned";
   $("#note").value = item.note || "";
 }
@@ -1308,14 +1310,13 @@ function csvCell(value) {
 }
 
 function exportCsv() {
-  const headers = ["配達順", "購読者・建物名", "住所", "エリア", "予定時刻", "部数", "状態", "メモ", "緯度", "経度", "更新日時"];
+  const headers = ["配達順", "購読者・建物名", "住所", "エリア", "予定時刻", "状態", "メモ", "緯度", "経度", "更新日時"];
   const rows = stops.map(stop => [
     stop.orderNo,
     stop.customerName,
     stop.address,
     areaById(stop.areaId).name,
     stop.plannedTime,
-    stop.copies,
     STATUS[stop.status]?.label || stop.status,
     stop.note,
     stop.lat,
@@ -1495,7 +1496,7 @@ function bindEvents() {
   $("#importRosterBtn").addEventListener("click", () => {
     const imported = parseRosterText($("#rosterInput").value);
     if (!imported.length) {
-      alert("名簿は「名前,住所,エリア,部数,メモ」の形で貼り付けてください。");
+      alert("名簿は「名前,住所,エリア,メモ」の形で貼り付けてください。");
       return;
     }
     importRosterItems(imported);
@@ -1530,14 +1531,13 @@ function bindEvents() {
         alert("Excelから名簿を読み込めませんでした。名前と住所を入力してください。");
         return;
       }
-      importRosterItems(imported);
-      $("#rosterInput").value = roster.map(item => [
-        item.name,
-        item.address,
-        item.areaName || areaById(item.areaId).name,
-        item.copies || 1,
-        item.note || ""
-      ].map(csvCell).join(",")).join("\n");
+    importRosterItems(imported);
+    $("#rosterInput").value = roster.map(item => [
+      item.name,
+      item.address,
+      item.areaName || areaById(item.areaId).name,
+      item.note || ""
+    ].map(csvCell).join(",")).join("\n");
       showControlPanel("roster");
       render();
     };

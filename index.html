@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>新聞配達マップ共有</title>
-  <link rel="stylesheet" href="style.css?v=20260530-5">
+  <link rel="stylesheet" href="style.css?v=20260530-6">
 </head>
 <body>
   <div class="app-shell">
@@ -69,9 +69,6 @@
             <label>予定時刻
               <input id="plannedTime" type="time">
             </label>
-            <label>部数
-              <input id="copies" type="number" min="1" value="1">
-            </label>
           </div>
           <label>状態
             <select id="status">
@@ -97,7 +94,7 @@
             <button id="clearRosterBtn" type="button" class="ghost">名簿クリア</button>
           </div>
           <label>名簿貼り付け
-            <textarea id="rosterInput" rows="5" placeholder="名前,住所,エリア,部数,メモ&#10;山田様,札幌市中央区北1条西2丁目,中央北コース,1,集合ポスト左上"></textarea>
+            <textarea id="rosterInput" rows="5" placeholder="名前,住所,エリア,メモ&#10;山田様,札幌市中央区北1条西2丁目,中央北コース,集合ポスト左上"></textarea>
           </label>
           <div class="roster-actions">
             <button id="importRosterBtn" type="button" class="primary">名簿を読み込む</button>
@@ -230,6 +227,6 @@
   </template>
 
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-  <script src="app.js?v=20260530-5"></script>
+  <script src="app.js?v=20260530-6"></script>
 </body>
 </html>
