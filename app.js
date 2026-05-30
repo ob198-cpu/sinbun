@@ -55,6 +55,7 @@ let areas = [];
 let roster = [];
 let selectedRosterId = "";
 let pendingPlaceStopId = "";
+let expandedRegisteredId = "";
 let currentFilter = "all";
 let currentAreaId = "all";
 let showNameLabels = localStorage.getItem(LABEL_STORAGE) !== "false";
@@ -471,24 +472,31 @@ function renderRegisteredList() {
 
   items.forEach(stop => {
     const statusInfo = STATUS[stop.status] || STATUS.planned;
+    const expanded = expandedRegisteredId === stop.id;
     const row = document.createElement("article");
-    row.className = "registered-row";
+    row.className = `registered-row ${expanded ? "expanded" : ""}`;
     row.innerHTML = `
-      <div class="registered-order">${escapeHtml(stop.orderNo)}</div>
       <div class="registered-main">
         <div class="registered-title">
           <strong>${escapeHtml(stop.customerName)}</strong>
-          <span class="status-pill status-${escapeHtml(stop.status)}">${escapeHtml(statusInfo.label)}</span>
+          <div class="registered-quick-actions">
+            <button type="button" data-registered-action="place" data-id="${escapeHtml(stop.id)}">${pendingPlaceStopId === stop.id ? "ピン追加中" : "ピン追加"}</button>
+            <button type="button" data-registered-action="details" data-id="${escapeHtml(stop.id)}">${expanded ? "閉じる" : "詳細"}</button>
+          </div>
         </div>
-        <p>${escapeHtml(stop.address)}</p>
-        <p>${escapeHtml(areaById(stop.areaId).name)} / ${escapeHtml(stop.copies || 1)}部${stop.lat && stop.lng ? " / 位置登録済み" : " / 位置未登録"}</p>
-        <div class="card-actions">
-          <button type="button" data-registered-action="place" data-id="${escapeHtml(stop.id)}">${pendingPlaceStopId === stop.id ? "ピン追加中" : "ピン追加"}</button>
-          <button type="button" data-registered-action="delivered" data-id="${escapeHtml(stop.id)}">完了</button>
-          <button type="button" data-registered-action="missed" data-id="${escapeHtml(stop.id)}">未配</button>
-          <button type="button" data-registered-action="wrong" data-id="${escapeHtml(stop.id)}">誤配</button>
-          <button type="button" data-registered-action="edit" data-id="${escapeHtml(stop.id)}">編集</button>
-        </div>
+        ${expanded ? `
+          <div class="registered-details">
+            <span class="status-pill status-${escapeHtml(stop.status)}">${escapeHtml(statusInfo.label)}</span>
+            <p>${escapeHtml(stop.address)}</p>
+            <p>${escapeHtml(areaById(stop.areaId).name)} / ${escapeHtml(stop.copies || 1)}部${stop.lat && stop.lng ? " / 位置登録済み" : " / 位置未登録"}</p>
+            <div class="card-actions">
+              <button type="button" data-registered-action="delivered" data-id="${escapeHtml(stop.id)}">完了</button>
+              <button type="button" data-registered-action="missed" data-id="${escapeHtml(stop.id)}">未配</button>
+              <button type="button" data-registered-action="wrong" data-id="${escapeHtml(stop.id)}">誤配</button>
+              <button type="button" data-registered-action="edit" data-id="${escapeHtml(stop.id)}">編集</button>
+            </div>
+          </div>
+        ` : ""}
       </div>
     `;
     list.appendChild(row);
@@ -1131,6 +1139,11 @@ function updateMapModeHint(message) {
 }
 
 function handleRegisteredAction(action, id) {
+  if (action === "details") {
+    expandedRegisteredId = expandedRegisteredId === id ? "" : id;
+    renderRegisteredList();
+    return;
+  }
   if (action === "place") {
     pendingPlaceStopId = id;
     selectedRosterId = "";

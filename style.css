@@ -314,31 +314,42 @@ input[type="color"] {
 }
 
 .registered-row {
-  display: grid;
-  grid-template-columns: 38px 1fr;
-  gap: 9px;
-  padding: 10px;
+  display: block;
+  padding: 8px 9px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fff;
 }
 
-.registered-order {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 7px;
-  color: #fff;
-  background: var(--accent);
-  font-weight: 800;
-}
-
 .registered-title {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
+}
+
+.registered-title strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 15px;
+}
+
+.registered-quick-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 5px;
+}
+
+.registered-quick-actions button {
+  min-height: 30px;
+  padding: 4px 7px;
+  font-size: 13px;
+}
+
+.registered-details {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
 }
 
 .registered-main p {
