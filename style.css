@@ -710,30 +710,150 @@ input[type="color"] {
 }
 
 @media (max-width: 640px) {
+  body {
+    overflow: hidden;
+  }
+
+  .app-shell {
+    height: 100vh;
+    display: block;
+    overflow: hidden;
+  }
+
   .sidebar,
   .operations {
-    padding: 14px;
+    padding: 0;
+  }
+
+  .sidebar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10;
+    max-height: 46vh;
+    overflow: auto;
+    padding: 8px 10px 10px;
+    border-top: 1px solid var(--line);
+    border-bottom: 0;
+    background: rgba(238, 243, 246, 0.96);
+    box-shadow: 0 -10px 32px rgba(31, 42, 68, 0.18);
+  }
+
+  .brand {
+    display: none;
+  }
+
+  .compact-stats {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+    margin-bottom: 8px;
+    padding: 8px;
+  }
+
+  .compact-stats div {
+    padding: 5px 4px;
+  }
+
+  .compact-stats strong {
+    font-size: 17px;
+  }
+
+  .compact-stats span {
+    font-size: 10px;
+  }
+
+  .control-switch {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 5px;
+    margin-bottom: 8px;
+  }
+
+  .control-tab {
+    min-height: 34px;
+    padding: 5px 4px;
+    font-size: 13px;
+  }
+
+  .panel {
+    margin-bottom: 8px;
+    padding: 10px;
+    border-radius: 8px;
+  }
+
+  .panel h2 {
+    font-size: 15px;
+  }
+
+  input,
+  select,
+  textarea {
+    padding: 8px 9px;
+    font-size: 14px;
+  }
+
+  button {
+    min-height: 34px;
+    padding: 6px 8px;
+    font-size: 14px;
+  }
+
+  .registered-list,
+  .roster-list {
+    max-height: 22vh;
   }
 
   .form-grid,
   .share-grid,
   .roster-actions,
-  .compact-stats {
+  .area-form-row {
     grid-template-columns: 1fr;
+  }
+
+  .workspace {
+    height: 100vh;
+    grid-template-rows: 1fr;
+  }
+
+  .map-stage,
+  .map-canvas {
+    min-height: 100vh;
+    height: 100vh;
   }
 
   .list-header,
   .route-toolbar {
     align-items: stretch;
-    flex-direction: column;
+    flex-direction: row;
   }
 
   .route-toolbar {
-    left: 14px;
-    right: 14px;
+    left: 8px;
+    right: 8px;
+    top: 8px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 5px;
+    padding: 6px;
+  }
+
+  .route-toolbar button {
+    min-height: 32px;
+    padding: 4px 3px;
+    font-size: 12px;
+    white-space: nowrap;
   }
 
   .stop-list {
     grid-template-columns: 1fr;
+  }
+
+  .map-mode-hint {
+    top: 54px;
+    left: 8px;
+    right: 8px;
+    max-width: none;
+    padding: 8px 10px;
+    font-size: 12px;
   }
 }
