@@ -100,10 +100,16 @@ function loadState() {
   }
 
   try {
-    applyLoadedState(JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"));
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) {
+      applyInitialSampleState();
+      saveState();
+      return;
+    }
+    applyLoadedState(JSON.parse(saved));
   } catch {
-    stops = [];
-    areas = defaultAreas();
+    applyInitialSampleState();
+    saveState();
   }
 }
 
@@ -115,6 +121,7 @@ function applyLoadedState(value) {
   if (Array.isArray(value)) {
     stops = value.map(stop => ({ ...stop, areaId: stop.areaId || DEFAULT_AREA_ID }));
     areas = defaultAreas();
+    roster = [];
     drawnLines = [];
     return;
   }
@@ -122,6 +129,28 @@ function applyLoadedState(value) {
   areas = value?.areas?.length ? value.areas : defaultAreas();
   roster = (value?.roster || []).map(item => ({ ...item, id: item.id || crypto.randomUUID() }));
   drawnLines = value?.drawnLines || [];
+}
+
+function applyInitialSampleState() {
+  areas = SAMPLE_AREAS.map(area => ({ ...area, bounds: area.bounds || null }));
+  stops = SAMPLE_STOPS.map(item => normalizeStop({ ...item, id: crypto.randomUUID() }));
+  roster = sampleRosterItems();
+  drawnLines = [];
+}
+
+function sampleRosterItems() {
+  return SAMPLE_STOPS.map(stop => {
+    const area = SAMPLE_AREAS.find(item => item.id === stop.areaId) || SAMPLE_AREAS[0];
+    return {
+      id: crypto.randomUUID(),
+      name: stop.customerName,
+      address: stop.address,
+      areaName: area.name,
+      areaId: area.id,
+      copies: stop.copies || 1,
+      note: stop.note || ""
+    };
+  });
 }
 
 function defaultAreas() {
@@ -1515,8 +1544,7 @@ function bindEvents() {
     clearForm();
   });
   $("#sampleBtn").addEventListener("click", () => {
-    stops = SAMPLE_STOPS.map(item => normalizeStop({ ...item, id: crypto.randomUUID() }));
-    areas = SAMPLE_AREAS.map(area => ({ ...area }));
+    applyInitialSampleState();
     saveState();
     render();
     syncMap();
