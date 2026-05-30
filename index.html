@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>新聞配達マップ共有</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <header class="brand">
+        <div>
+          <p class="eyebrow">Delivery Operations</p>
+          <h1>新聞配達マップ共有</h1>
+        </div>
+        <span class="live-dot" aria-label="共有中"></span>
+      </header>
+
+      <section class="panel compact-stats" aria-label="配達状況">
+        <div>
+          <strong id="statPlanned">0</strong>
+          <span>予定</span>
+        </div>
+        <div>
+          <strong id="statDelivered">0</strong>
+          <span>完了</span>
+        </div>
+        <div>
+          <strong id="statMissed">0</strong>
+          <span>未配</span>
+        </div>
+        <div>
+          <strong id="statWrong">0</strong>
+          <span>誤配</span>
+        </div>
+      </section>
+
+      <nav class="control-switch" aria-label="操作切替">
+        <button type="button" class="control-tab active" data-control-target="roster">名簿</button>
+        <button type="button" class="control-tab" data-control-target="new">新規登録</button>
+        <button type="button" class="control-tab" data-control-target="settings">設定</button>
+      </nav>
+
+      <section class="panel control-panel hidden" data-control-panel="settings">
+        <div class="panel-heading">
+          <h2>地図設定</h2>
+        </div>
+        <div class="api-panel">
+          <label for="apiKey">Google Maps APIキー</label>
+          <div class="key-row">
+            <input id="apiKey" type="password" autocomplete="off" placeholder="AIza...">
+            <button id="loadMapBtn" type="button" title="地図を読み込む">読込</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel control-panel hidden" data-control-panel="settings">
+        <div class="panel-heading">
+          <h2>エリア管理</h2>
+        </div>
+        <form id="areaForm" class="area-form">
+          <input type="hidden" id="areaId">
+          <label>エリア名
+            <input id="areaName" type="text" placeholder="例: 北口Aコース">
+          </label>
+          <div class="area-form-row">
+            <label>色
+              <input id="areaColor" type="color" value="#146c94">
+            </label>
+            <button type="submit" class="primary">エリア保存</button>
+          </div>
+        </form>
+        <div id="areaManageList" class="area-manage-list"></div>
+      </section>
+
+      <section class="panel control-panel hidden" data-control-panel="new">
+        <div class="panel-heading">
+          <h2>配達先登録</h2>
+          <button id="sampleBtn" type="button" class="ghost">サンプル</button>
+        </div>
+        <form id="stopForm" class="stop-form">
+          <input type="hidden" id="stopId">
+          <label>配達順
+            <input id="orderNo" type="number" min="1" required>
+          </label>
+          <label>購読者・建物名
+            <input id="customerName" type="text" required placeholder="山田様 / 北1条マンション">
+          </label>
+          <label>住所
+            <input id="address" type="text" required placeholder="札幌市中央区...">
+          </label>
+          <label>エリア
+            <select id="areaSelect"></select>
+          </label>
+          <div class="form-grid">
+            <label>予定時刻
+              <input id="plannedTime" type="time">
+            </label>
+            <label>部数
+              <input id="copies" type="number" min="1" value="1">
+            </label>
+          </div>
+          <label>状態
+            <select id="status">
+              <option value="planned">配達予定</option>
+              <option value="delivered">配達完了</option>
+              <option value="missed">未配</option>
+              <option value="wrong">誤配</option>
+              <option value="hold">保留</option>
+            </select>
+          </label>
+          <label>メモ
+            <textarea id="note" rows="3" placeholder="ポスト位置、休止、注意事項など"></textarea>
+          </label>
+          <div class="form-actions">
+            <button type="submit" class="primary">保存</button>
+            <button id="clearFormBtn" type="button">クリア</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel control-panel" data-control-panel="roster">
+        <div class="panel-heading">
+          <h2>名簿引用</h2>
+          <button id="clearRosterBtn" type="button" class="ghost">名簿クリア</button>
+        </div>
+        <label>名簿貼り付け
+          <textarea id="rosterInput" rows="5" placeholder="名前,住所,エリア,部数,メモ&#10;山田様,札幌市中央区北1条西2丁目,中央北コース,1,集合ポスト左上"></textarea>
+        </label>
+        <div class="roster-actions">
+          <button id="importRosterBtn" type="button" class="primary">名簿を読み込む</button>
+          <button id="addRosterStopBtn" type="button">候補を配達先へ</button>
+        </div>
+        <label>候補検索
+          <input id="rosterSearch" type="search" placeholder="名前・住所で検索">
+        </label>
+        <p class="hint-text">候補を地図の家の位置へドラッグすると、その場所に登録できます。</p>
+        <div id="rosterList" class="roster-list"></div>
+      </section>
+
+      <section class="panel control-panel hidden" data-control-panel="settings">
+        <div class="panel-heading">
+          <h2>共有・出力</h2>
+        </div>
+        <div class="share-grid">
+          <button id="shareBtn" type="button">共有リンク作成</button>
+          <button id="googleRouteBtn" type="button">Googleルート</button>
+          <button id="copySummaryBtn" type="button">状況コピー</button>
+          <button id="exportCsvBtn" type="button">CSV出力</button>
+          <button id="resetBtn" type="button" class="danger">全削除</button>
+        </div>
+        <textarea id="shareOutput" rows="3" readonly placeholder="共有リンクや状況文がここに表示されます"></textarea>
+      </section>
+    </aside>
+
+    <main class="workspace">
+      <section class="map-stage">
+        <div id="map" class="map-canvas" aria-label="Google Map">
+          <div class="map-fallback">
+            <div class="fallback-map-art">
+              <span></span><span></span><span></span><span></span>
+            </div>
+            <h2>Google Maps APIキーを入力して地図を読み込んでください</h2>
+            <p>キー未入力でも配達先の登録、状態管理、CSV出力、共有文の作成は使えます。</p>
+          </div>
+        </div>
+        <div class="route-toolbar">
+          <button id="fitBtn" type="button" title="全配達先を表示">全体表示</button>
+          <button id="routeBtn" type="button" title="ルート線を更新">ルート更新</button>
+          <button id="todayBtn" type="button" title="未完了だけ表示">未完了</button>
+          <button id="nameLabelBtn" type="button" title="名前ラベルを切替">名前表示</button>
+        </div>
+      </section>
+
+      <section class="operations">
+        <div class="list-header">
+          <div>
+            <p class="eyebrow">Route Board</p>
+            <h2>配達ルート</h2>
+          </div>
+          <div id="areaTabs" class="area-tabs" role="tablist" aria-label="エリア切替"></div>
+          <div class="filters" role="group" aria-label="状態フィルター">
+            <button class="filter active" data-filter="all" type="button">全件</button>
+            <button class="filter" data-filter="planned" type="button">予定</button>
+            <button class="filter" data-filter="missed" type="button">未配</button>
+            <button class="filter" data-filter="wrong" type="button">誤配</button>
+          </div>
+        </div>
+        <div id="stopList" class="stop-list"></div>
+      </section>
+    </main>
+  </div>
+
+  <template id="stopTemplate">
+    <article class="stop-card">
+      <div class="stop-order"></div>
+      <div class="stop-main">
+        <div class="stop-title-row">
+          <h3></h3>
+          <span class="status-pill"></span>
+        </div>
+        <p class="address-line"></p>
+        <p class="meta-line"></p>
+        <p class="note-line"></p>
+        <div class="card-actions">
+          <button type="button" data-action="delivered">完了</button>
+          <button type="button" data-action="missed">未配</button>
+          <button type="button" data-action="wrong">誤配</button>
+          <button type="button" data-action="edit">編集</button>
+          <button type="button" data-action="delete" class="danger">削除</button>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
