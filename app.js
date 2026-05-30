@@ -566,11 +566,22 @@ function downloadRosterTemplate() {
 </body>
 </html>`;
   const blob = new Blob(["\uFEFF" + html], { type: "application/vnd.ms-excel;charset=utf-8" });
+  downloadBlob(blob, "新聞配達_入力用名簿.xls");
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "新聞配達_入力用名簿.xls";
+  link.href = url;
+  link.download = filename;
+  link.rel = "noopener";
+  link.style.display = "none";
+  document.body.appendChild(link);
   link.click();
-  URL.revokeObjectURL(link.href);
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+    link.remove();
+  }, 1000);
 }
 
 function parseRosterWorkbookText(text) {
