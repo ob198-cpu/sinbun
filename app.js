@@ -1,6 +1,7 @@
 const STORAGE_KEY = "newspaper-delivery-map-v1";
 const KEY_STORAGE = "newspaper-delivery-google-key";
 const LABEL_STORAGE = "newspaper-delivery-show-labels";
+const PUBLIC_URL = "https://ob198-cpu.github.io/sinbun/";
 
 const DEFAULT_AREA_ID = "area-default";
 
@@ -1051,7 +1052,7 @@ function escapeHtml(value) {
 
 function makeShareLink() {
   const data = btoa(unescape(encodeURIComponent(JSON.stringify({ stops, areas, drawnLines }))));
-  return `${location.origin}${location.pathname}?data=${data}`;
+  return `${PUBLIC_URL}?data=${data}`;
 }
 
 function makeGoogleRouteLink() {
