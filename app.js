@@ -60,6 +60,9 @@ let currentAreaId = "all";
 let showNameLabels = localStorage.getItem(LABEL_STORAGE) !== "false";
 let drawLineMode = false;
 let areaAssignMode = false;
+let areaSelectionStart = null;
+let areaSelectionPreview = null;
+let areaRectangles = [];
 let map;
 let geocoder;
 let bounds;
@@ -111,7 +114,7 @@ function applyLoadedState(value) {
 }
 
 function defaultAreas() {
-  return [{ id: DEFAULT_AREA_ID, name: "基本エリア", color: "#146c94" }];
+  return [{ id: DEFAULT_AREA_ID, name: "基本エリア", color: "#146c94", bounds: null }];
 }
 
 function currentAreaStops(source = stops) {
@@ -124,7 +127,7 @@ function ensureAreaByName(name) {
   if (!cleaned) return areas[0]?.id || DEFAULT_AREA_ID;
   const found = areas.find(area => area.name === cleaned);
   if (found) return found.id;
-  const area = { id: crypto.randomUUID(), name: cleaned, color: randomAreaColor() };
+  const area = { id: crypto.randomUUID(), name: cleaned, color: randomAreaColor(), bounds: null };
   areas.push(area);
   return area.id;
 }
@@ -260,15 +263,22 @@ function setStopPosition(id, latLng) {
   syncMap();
 }
 
-function assignStopArea(id, areaId) {
-  const stop = stops.find(item => item.id === id);
-  if (!stop || !areaId) return;
-  stop.areaId = areaId;
-  stop.updatedAt = new Date().toISOString();
+function saveAreaBounds(name, boundsValue) {
+  const area = {
+    id: crypto.randomUUID(),
+    name,
+    color: randomAreaColor(),
+    bounds: boundsValue
+  };
+  areas.push(area);
+  currentAreaId = area.id;
   areaAssignMode = false;
+  areaSelectionStart = null;
+  clearAreaSelectionPreview();
   saveState();
   render();
-  syncMap();
+  syncMap({ fit: false });
+  jumpToArea(area.id);
 }
 
 function moveStopPosition(id, latLng) {
@@ -358,13 +368,6 @@ function renderAreaControls() {
   const previous = select.value || DEFAULT_AREA_ID;
   select.innerHTML = areas.map(area => `<option value="${escapeHtml(area.id)}">${escapeHtml(area.name)}</option>`).join("");
   select.value = areas.some(area => area.id === previous) ? previous : (areas[0]?.id || DEFAULT_AREA_ID);
-
-  const assignSelect = $("#areaAssignSelect");
-  if (assignSelect) {
-    const assignPrevious = assignSelect.value || (areas[0]?.id || DEFAULT_AREA_ID);
-    assignSelect.innerHTML = areas.map(area => `<option value="${escapeHtml(area.id)}">${escapeHtml(area.name)}</option>`).join("");
-    assignSelect.value = areas.some(area => area.id === assignPrevious) ? assignPrevious : (areas[0]?.id || DEFAULT_AREA_ID);
-  }
 
   const tabs = $("#areaTabs");
   tabs.innerHTML = "";
@@ -598,6 +601,10 @@ window.initMap = function initMap() {
       addManualLinePoint(event.latLng);
       return;
     }
+    if (areaAssignMode) {
+      handleAreaSelectionClick(event.latLng);
+      return;
+    }
     if (pendingPlaceStopId) {
       setStopPosition(pendingPlaceStopId, event.latLng);
       return;
@@ -613,6 +620,57 @@ window.initMap = function initMap() {
   });
   syncMap({ fit: true });
 };
+
+function handleAreaSelectionClick(latLng) {
+  if (!areaSelectionStart) {
+    areaSelectionStart = { lat: latLng.lat(), lng: latLng.lng() };
+    drawAreaSelectionPreview(areaBoundsFromPoints(areaSelectionStart, areaSelectionStart));
+    return;
+  }
+  const boundsValue = areaBoundsFromPoints(areaSelectionStart, { lat: latLng.lat(), lng: latLng.lng() });
+  drawAreaSelectionPreview(boundsValue);
+  if (!confirm("この範囲をエリアとして保存しますか？")) {
+    areaSelectionStart = null;
+    clearAreaSelectionPreview();
+    return;
+  }
+  const name = prompt("エリア名を入力してください", `エリア${areas.length + 1}`);
+  if (!name || !name.trim()) {
+    areaSelectionStart = null;
+    clearAreaSelectionPreview();
+    return;
+  }
+  saveAreaBounds(name.trim(), boundsValue);
+}
+
+function areaBoundsFromPoints(a, b) {
+  return {
+    north: Math.max(a.lat, b.lat),
+    south: Math.min(a.lat, b.lat),
+    east: Math.max(a.lng, b.lng),
+    west: Math.min(a.lng, b.lng)
+  };
+}
+
+function drawAreaSelectionPreview(boundsValue) {
+  if (!map || !window.google?.maps) return;
+  clearAreaSelectionPreview();
+  areaSelectionPreview = new google.maps.Rectangle({
+    map,
+    bounds: boundsValue,
+    strokeColor: "#bd3d32",
+    strokeOpacity: 0.95,
+    strokeWeight: 2,
+    fillColor: "#bd3d32",
+    fillOpacity: 0.08,
+    clickable: false
+  });
+}
+
+function clearAreaSelectionPreview() {
+  if (areaSelectionPreview) areaSelectionPreview.setMap(null);
+  areaSelectionPreview = null;
+}
 
 function addManualLinePoint(latLng) {
   manualLinePath.push({ lat: latLng.lat(), lng: latLng.lng() });
@@ -696,6 +754,8 @@ function syncMap(options = {}) {
   markers.forEach(marker => marker.setMap(null));
   markers.clear();
   if (routeLine) routeLine.setMap(null);
+  areaRectangles.forEach(rectangle => rectangle.setMap(null));
+  areaRectangles = [];
 
   bounds = new google.maps.LatLngBounds();
   const visibleStops = filteredStops();
@@ -717,10 +777,6 @@ function syncMap(options = {}) {
     });
     const info = new google.maps.InfoWindow({ content: markerInfoHtml(stop) });
     marker.addListener("click", () => {
-      if (areaAssignMode) {
-        assignStopArea(stop.id, $("#areaAssignSelect").value);
-        return;
-      }
       if (openInfoWindow) openInfoWindow.close();
       openInfoWindow = info;
       info.open({ anchor: marker, map });
@@ -734,8 +790,32 @@ function syncMap(options = {}) {
   });
 
   drawRoute();
+  drawSavedAreaRectangles();
   drawManualLine();
   if (shouldFit && !bounds.isEmpty()) map.fitBounds(bounds, 64);
+}
+
+function drawSavedAreaRectangles() {
+  if (!map || !window.google?.maps) return;
+  areas.forEach(area => {
+    if (!area.bounds) return;
+    const rectangle = new google.maps.Rectangle({
+      map,
+      bounds: area.bounds,
+      strokeColor: area.color,
+      strokeOpacity: 0.65,
+      strokeWeight: 2,
+      fillOpacity: 0,
+      clickable: false
+    });
+    areaRectangles.push(rectangle);
+  });
+}
+
+function jumpToArea(areaId) {
+  const area = areaById(areaId);
+  if (!map || !window.google?.maps || !area?.bounds) return;
+  map.fitBounds(area.bounds, 48);
 }
 
 function drawRoute() {
@@ -979,7 +1059,8 @@ function bindEvents() {
     }
     const id = $("#areaId").value || crypto.randomUUID();
     const existing = areas.findIndex(area => area.id === id);
-    const area = { id, name, color: $("#areaColor").value || "#146c94" };
+    const previous = existing >= 0 ? areas[existing] : {};
+    const area = { ...previous, id, name, color: $("#areaColor").value || "#146c94" };
     if (existing >= 0) {
       areas[existing] = area;
     } else {
@@ -1023,6 +1104,7 @@ function bindEvents() {
     currentAreaId = button.dataset.areaId;
     render();
     syncMap();
+    if (currentAreaId !== "all") jumpToArea(currentAreaId);
     clearForm();
   });
   $("#sampleBtn").addEventListener("click", () => {
@@ -1063,8 +1145,11 @@ function bindEvents() {
   $("#areaAssignBtn").addEventListener("click", () => {
     areaAssignMode = !areaAssignMode;
     drawLineMode = false;
+    areaSelectionStart = null;
+    clearAreaSelectionPreview();
     $("#areaAssignBtn").classList.toggle("active", areaAssignMode);
     $("#drawLineBtn").classList.remove("active");
+    showControlPanel("areas");
   });
   $("#nameLabelBtn").addEventListener("click", () => {
     showNameLabels = !showNameLabels;
