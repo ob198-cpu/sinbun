@@ -68,9 +68,11 @@ let geocoder;
 let bounds;
 let mapProjection;
 let markers = new Map();
-let routeLine;
-let manualLine;
-let manualLinePath = [];
+let drawnLines = [];
+let drawnLineOverlays = [];
+let drawingLinePath = [];
+let drawingLineOverlay = null;
+let isDrawingLine = false;
 let openInfoWindow;
 
 const $ = selector => document.querySelector(selector);
@@ -99,18 +101,20 @@ function loadState() {
 }
 
 function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ stops, areas, roster }));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ stops, areas, roster, drawnLines }));
 }
 
 function applyLoadedState(value) {
   if (Array.isArray(value)) {
     stops = value.map(stop => ({ ...stop, areaId: stop.areaId || DEFAULT_AREA_ID }));
     areas = defaultAreas();
+    drawnLines = [];
     return;
   }
   stops = (value?.stops || []).map(stop => ({ ...stop, areaId: stop.areaId || DEFAULT_AREA_ID }));
   areas = value?.areas?.length ? value.areas : defaultAreas();
   roster = (value?.roster || []).map(item => ({ ...item, id: item.id || crypto.randomUUID() }));
+  drawnLines = value?.drawnLines || [];
 }
 
 function defaultAreas() {
@@ -596,11 +600,8 @@ window.initMap = function initMap() {
   geocoder = new google.maps.Geocoder();
   setupMapProjection();
   setupMapDrop();
+  setupLineDrawing();
   map.addListener("click", event => {
-    if (drawLineMode) {
-      addManualLinePoint(event.latLng);
-      return;
-    }
     if (areaAssignMode) {
       handleAreaSelectionClick(event.latLng);
       return;
@@ -672,21 +673,134 @@ function clearAreaSelectionPreview() {
   areaSelectionPreview = null;
 }
 
-function addManualLinePoint(latLng) {
-  manualLinePath.push({ lat: latLng.lat(), lng: latLng.lng() });
-  drawManualLine();
+function setupLineDrawing() {
+  const mapNode = $("#map");
+  mapNode.addEventListener("pointerdown", event => {
+    if (!drawLineMode || !mapProjection) return;
+    event.preventDefault();
+    isDrawingLine = true;
+    drawingLinePath = [pointToLatLng(event)];
+    drawDrawingLine();
+  });
+  mapNode.addEventListener("pointermove", event => {
+    if (!isDrawingLine || !drawLineMode || !mapProjection) return;
+    event.preventDefault();
+    drawingLinePath.push(pointToLatLng(event));
+    drawDrawingLine();
+  });
+  mapNode.addEventListener("pointerup", event => {
+    if (!isDrawingLine || !drawLineMode || !mapProjection) return;
+    event.preventDefault();
+    isDrawingLine = false;
+    drawingLinePath.push(pointToLatLng(event));
+    finishDrawnLine();
+  });
 }
 
-function drawManualLine() {
+function pointToLatLng(event) {
+  const rect = $("#map").getBoundingClientRect();
+  const point = new google.maps.Point(event.clientX - rect.left, event.clientY - rect.top);
+  const latLng = mapProjection.fromContainerPixelToLatLng(point);
+  return { lat: latLng.lat(), lng: latLng.lng() };
+}
+
+function drawDrawingLine() {
   if (!map || !window.google?.maps) return;
-  if (manualLine) manualLine.setMap(null);
-  if (manualLinePath.length < 2) return;
-  manualLine = new google.maps.Polyline({
-    path: manualLinePath,
+  if (drawingLineOverlay) drawingLineOverlay.setMap(null);
+  if (drawingLinePath.length < 2) return;
+  drawingLineOverlay = new google.maps.Polyline({
+    path: drawingLinePath,
     map,
     strokeColor: "#bd3d32",
     strokeOpacity: 0.95,
     strokeWeight: 4
+  });
+}
+
+function finishDrawnLine() {
+  if (drawingLineOverlay) drawingLineOverlay.setMap(null);
+  drawingLineOverlay = null;
+  if (drawingLinePath.length < 2) {
+    drawingLinePath = [];
+    return;
+  }
+  drawnLines.push({
+    id: crypto.randomUUID(),
+    path: simplifyLinePath(drawingLinePath),
+    comment: ""
+  });
+  drawingLinePath = [];
+  saveState();
+  syncMap({ fit: false });
+}
+
+function simplifyLinePath(path) {
+  if (path.length <= 24) return path;
+  const step = Math.ceil(path.length / 24);
+  return path.filter((_, index) => index % step === 0 || index === path.length - 1);
+}
+
+function drawSavedLines() {
+  if (!map || !window.google?.maps) return;
+  drawnLineOverlays.forEach(line => line.setMap(null));
+  drawnLineOverlays = [];
+  drawnLines.forEach(line => {
+    const overlay = new google.maps.Polyline({
+      path: line.path,
+      map,
+      strokeColor: "#bd3d32",
+      strokeOpacity: 0.95,
+      strokeWeight: 4,
+      clickable: true
+    });
+    overlay.addListener("click", event => openLineMenu(line.id, event.latLng));
+    drawnLineOverlays.push(overlay);
+  });
+}
+
+function openLineMenu(lineId, latLng) {
+  const line = drawnLines.find(item => item.id === lineId);
+  if (!line) return;
+  const info = new google.maps.InfoWindow({
+    position: latLng,
+    content: `
+      <div class="map-info">
+        <strong>線分メモ</strong>
+        <span>${escapeHtml(line.comment || "コメントなし")}</span>
+        <div class="map-info-actions">
+          <button type="button" data-line-comment="${escapeHtml(line.id)}">コメント追加</button>
+          <button type="button" data-line-delete="${escapeHtml(line.id)}">削除</button>
+        </div>
+      </div>
+    `
+  });
+  if (openInfoWindow) openInfoWindow.close();
+  openInfoWindow = info;
+  info.open({ map });
+  google.maps.event.addListenerOnce(info, "domready", bindLineMenuActions);
+}
+
+function bindLineMenuActions() {
+  document.querySelectorAll("[data-line-comment]").forEach(button => {
+    button.addEventListener("click", () => {
+      const line = drawnLines.find(item => item.id === button.dataset.lineComment);
+      if (!line) return;
+      const comment = prompt("コメントを入力してください", line.comment || "");
+      if (comment === null) return;
+      line.comment = comment.trim();
+      saveState();
+      if (openInfoWindow) openInfoWindow.close();
+      syncMap({ fit: false });
+    });
+  });
+  document.querySelectorAll("[data-line-delete]").forEach(button => {
+    button.addEventListener("click", () => {
+      if (!confirm("この線分を削除しますか？")) return;
+      drawnLines = drawnLines.filter(line => line.id !== button.dataset.lineDelete);
+      saveState();
+      if (openInfoWindow) openInfoWindow.close();
+      syncMap({ fit: false });
+    });
   });
 }
 
@@ -753,7 +867,6 @@ function syncMap(options = {}) {
   if (!map || !window.google?.maps) return;
   markers.forEach(marker => marker.setMap(null));
   markers.clear();
-  if (routeLine) routeLine.setMap(null);
   areaRectangles.forEach(rectangle => rectangle.setMap(null));
   areaRectangles = [];
 
@@ -789,9 +902,8 @@ function syncMap(options = {}) {
     bounds.extend(position);
   });
 
-  drawRoute();
   drawSavedAreaRectangles();
-  drawManualLine();
+  drawSavedLines();
   if (shouldFit && !bounds.isEmpty()) map.fitBounds(bounds, 64);
 }
 
@@ -816,22 +928,6 @@ function jumpToArea(areaId) {
   const area = areaById(areaId);
   if (!map || !window.google?.maps || !area?.bounds) return;
   map.fitBounds(area.bounds, 48);
-}
-
-function drawRoute() {
-  if (!map || !window.google?.maps) return;
-  const path = filteredStops()
-    .filter(stop => stop.lat && stop.lng)
-    .sort((a, b) => Number(a.orderNo) - Number(b.orderNo))
-    .map(stop => ({ lat: Number(stop.lat), lng: Number(stop.lng) }));
-  if (path.length < 2) return;
-  routeLine = new google.maps.Polyline({
-    path,
-    map,
-    strokeColor: "#146c94",
-    strokeOpacity: 0.9,
-    strokeWeight: 4
-  });
 }
 
 function markerInfoHtml(stop) {
@@ -897,7 +993,7 @@ function escapeHtml(value) {
 }
 
 function makeShareLink() {
-  const data = btoa(unescape(encodeURIComponent(JSON.stringify({ stops, areas }))));
+  const data = btoa(unescape(encodeURIComponent(JSON.stringify({ stops, areas, drawnLines }))));
   return `${location.origin}${location.pathname}?data=${data}`;
 }
 
@@ -1136,10 +1232,11 @@ function bindEvents() {
     areaAssignMode = false;
     $("#drawLineBtn").classList.toggle("active", drawLineMode);
     $("#areaAssignBtn").classList.remove("active");
-    if (!drawLineMode && manualLinePath.length) {
-      manualLinePath = [];
-      if (manualLine) manualLine.setMap(null);
-      manualLine = null;
+    if (!drawLineMode) {
+      isDrawingLine = false;
+      drawingLinePath = [];
+      if (drawingLineOverlay) drawingLineOverlay.setMap(null);
+      drawingLineOverlay = null;
     }
   });
   $("#areaAssignBtn").addEventListener("click", () => {
@@ -1171,6 +1268,7 @@ function bindEvents() {
     if (!confirm("配達データをすべて削除します。よろしいですか？")) return;
     stops = [];
     areas = defaultAreas();
+    drawnLines = [];
     currentAreaId = "all";
     saveState();
     render();
