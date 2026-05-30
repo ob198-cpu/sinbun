@@ -70,6 +70,7 @@ let areaSelectionStart = null;
 let isSelectingArea = false;
 let areaSelectionPreview = null;
 let areaRectangles = [];
+let areaLabels = [];
 let map;
 let geocoder;
 let bounds;
@@ -1169,6 +1170,8 @@ function syncMap(options = {}) {
   markers.clear();
   areaRectangles.forEach(rectangle => rectangle.setMap(null));
   areaRectangles = [];
+  areaLabels.forEach(label => label.setMap(null));
+  areaLabels = [];
 
   bounds = new google.maps.LatLngBounds();
   const visibleStops = filteredStops();
@@ -1221,7 +1224,42 @@ function drawSavedAreaRectangles() {
       clickable: false
     });
     areaRectangles.push(rectangle);
+    const label = new AreaNameOverlay(area, map);
+    areaLabels.push(label);
   });
+}
+
+class AreaNameOverlay extends google.maps.OverlayView {
+  constructor(area, targetMap) {
+    super();
+    this.area = area;
+    this.div = null;
+    this.setMap(targetMap);
+  }
+
+  onAdd() {
+    this.div = document.createElement("div");
+    this.div.className = "area-map-label";
+    this.div.textContent = this.area.name;
+    this.div.style.borderColor = this.area.color;
+    this.div.style.color = this.area.color;
+    this.getPanes().overlayLayer.appendChild(this.div);
+  }
+
+  draw() {
+    if (!this.div || !this.area.bounds) return;
+    const projection = this.getProjection();
+    const northWest = new google.maps.LatLng(this.area.bounds.north, this.area.bounds.west);
+    const point = projection.fromLatLngToDivPixel(northWest);
+    if (!point) return;
+    this.div.style.left = `${point.x + 4}px`;
+    this.div.style.top = `${point.y + 4}px`;
+  }
+
+  onRemove() {
+    if (this.div) this.div.remove();
+    this.div = null;
+  }
 }
 
 function jumpToArea(areaId) {

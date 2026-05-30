@@ -682,6 +682,23 @@ input[type="color"] {
   margin-top: 8px;
 }
 
+.area-map-label {
+  position: absolute;
+  max-width: 180px;
+  padding: 3px 7px;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 4px 12px rgba(31, 42, 68, 0.16);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.25;
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 #areaTabsHidden {
   display: none;
 }
