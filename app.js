@@ -248,15 +248,12 @@ function collectForm() {
 
 function stopFromRoster(item, position = {}) {
   const fallbackAreaId = existingAreaIdByName(item.areaName || areaById(item.areaId).name);
-  const positionedAreaId = position.lat && position.lng
-    ? areaIdForPosition({ lat: Number(position.lat), lng: Number(position.lng) }, fallbackAreaId)
-    : fallbackAreaId;
   return normalizeStop({
     id: "",
     orderNo: nextOrder(),
     customerName: item.name,
     address: item.address,
-    areaId: positionedAreaId,
+    areaId: fallbackAreaId,
     plannedTime: "",
     copies: item.copies || 1,
     status: "planned",
@@ -390,41 +387,17 @@ function positionObjectFromLatLng(latLng) {
   };
 }
 
-function pointInsideAreaBounds(point, area) {
-  if (!area?.bounds) return false;
-  return point.lat <= area.bounds.north &&
-    point.lat >= area.bounds.south &&
-    point.lng <= area.bounds.east &&
-    point.lng >= area.bounds.west;
-}
-
-function areaIdForPosition(point, fallbackAreaId) {
-  const matching = [...areas].reverse().find(area => pointInsideAreaBounds(point, area));
-  return matching?.id || fallbackAreaId || DEFAULT_AREA_ID;
-}
-
 function setStopPosition(id, latLng) {
   const stop = stops.find(item => item.id === id);
   if (!stop) return;
   const point = positionObjectFromLatLng(latLng);
   stop.lat = point.lat;
   stop.lng = point.lng;
-  stop.areaId = areaIdForPosition(point, stop.areaId);
   stop.updatedAt = new Date().toISOString();
   pendingPlaceStopId = "";
   saveState();
   render();
   syncMap();
-}
-
-function assignStopsInsideArea(area) {
-  stops.forEach(stop => {
-    if (!stop.lat || !stop.lng) return;
-    if (pointInsideAreaBounds({ lat: Number(stop.lat), lng: Number(stop.lng) }, area)) {
-      stop.areaId = area.id;
-      stop.updatedAt = new Date().toISOString();
-    }
-  });
 }
 
 function saveAreaBounds(name, boundsValue) {
@@ -435,7 +408,6 @@ function saveAreaBounds(name, boundsValue) {
     bounds: boundsValue
   };
   areas.push(area);
-  assignStopsInsideArea(area);
   currentAreaId = area.id;
   areaAssignMode = false;
   areaSelectionStart = null;
@@ -456,7 +428,6 @@ function moveStopPosition(id, latLng) {
   const point = positionObjectFromLatLng(latLng);
   stop.lat = point.lat;
   stop.lng = point.lng;
-  stop.areaId = areaIdForPosition(point, stop.areaId);
   stop.updatedAt = new Date().toISOString();
   saveState();
   render();
