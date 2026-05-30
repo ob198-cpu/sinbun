@@ -59,6 +59,7 @@ let currentFilter = "all";
 let currentAreaId = "all";
 let showNameLabels = localStorage.getItem(LABEL_STORAGE) !== "false";
 let drawLineMode = false;
+let drawLineType = "curve";
 let areaAssignMode = false;
 let areaSelectionStart = null;
 let areaSelectionPreview = null;
@@ -71,6 +72,7 @@ let markers = new Map();
 let drawnLines = [];
 let drawnLineOverlays = [];
 let drawingLinePath = [];
+let drawingLineStart = null;
 let drawingLineOverlay = null;
 let isDrawingLine = false;
 let openInfoWindow;
@@ -693,20 +695,23 @@ function setupLineDrawing() {
     if (!drawLineMode || !mapProjection) return;
     event.preventDefault();
     isDrawingLine = true;
-    drawingLinePath = [pointToLatLng(event)];
+    drawingLineStart = pointToLatLng(event);
+    drawingLinePath = [drawingLineStart];
     drawDrawingLine();
   });
   mapNode.addEventListener("pointermove", event => {
     if (!isDrawingLine || !drawLineMode || !mapProjection) return;
     event.preventDefault();
-    drawingLinePath.push(pointToLatLng(event));
+    const point = pointToLatLng(event);
+    drawingLinePath = drawLineType === "straight" ? [drawingLineStart, point] : [...drawingLinePath, point];
     drawDrawingLine();
   });
   mapNode.addEventListener("pointerup", event => {
     if (!isDrawingLine || !drawLineMode || !mapProjection) return;
     event.preventDefault();
     isDrawingLine = false;
-    drawingLinePath.push(pointToLatLng(event));
+    const point = pointToLatLng(event);
+    drawingLinePath = drawLineType === "straight" ? [drawingLineStart, point] : [...drawingLinePath, point];
     finishDrawnLine();
   });
 }
@@ -741,9 +746,11 @@ function finishDrawnLine() {
   drawnLines.push({
     id: crypto.randomUUID(),
     path: simplifyLinePath(drawingLinePath),
+    type: drawLineType,
     comment: ""
   });
   drawingLinePath = [];
+  drawingLineStart = null;
   drawLineMode = false;
   $("#drawLineBtn")?.classList.remove("active");
   updateMapModeHint("");
@@ -1262,16 +1269,22 @@ function bindEvents() {
     syncMap();
   });
   $("#drawLineBtn").addEventListener("click", () => {
+    if (!drawLineMode) {
+      const choice = prompt("線の種類を入力してください。\n1: 直線\n2: 曲線", drawLineType === "straight" ? "1" : "2");
+      if (choice === null) return;
+      drawLineType = choice.trim() === "1" || choice.trim() === "直線" ? "straight" : "curve";
+    }
     drawLineMode = !drawLineMode;
     areaAssignMode = false;
     areaSelectionStart = null;
     clearAreaSelectionPreview();
     $("#drawLineBtn").classList.toggle("active", drawLineMode);
     $("#areaAssignBtn").classList.remove("active");
-    updateMapModeHint(drawLineMode ? "線を引く: 地図上をドラッグしてください。" : "");
+    updateMapModeHint(drawLineMode ? `線を引く（${drawLineType === "straight" ? "直線" : "曲線"}）: 地図上をドラッグしてください。` : "");
     if (!drawLineMode) {
       isDrawingLine = false;
       drawingLinePath = [];
+      drawingLineStart = null;
       if (drawingLineOverlay) drawingLineOverlay.setMap(null);
       drawingLineOverlay = null;
     }
