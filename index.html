@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>新聞配達マップ共有</title>
-  <link rel="stylesheet" href="style.css?v=20260530-15">
+  <link rel="stylesheet" href="style.css?v=20260530-16">
 </head>
 <body>
   <div class="app-shell">
@@ -115,20 +115,7 @@
         <div id="areaTabs" class="area-tabs side-area-tabs" role="tablist" aria-label="エリア切替"></div>
       </section>
 
-      <section class="panel control-panel hidden" data-control-panel="settings">
-        <div class="panel-heading">
-          <h2>地図設定</h2>
-        </div>
-        <div class="api-panel">
-          <label for="apiKey">Google Maps APIキー</label>
-          <div class="key-row">
-            <input id="apiKey" type="password" autocomplete="off" placeholder="AIza...">
-            <button id="loadMapBtn" type="button" title="地図を読み込む">読込</button>
-          </div>
-        </div>
-      </section>
-
-      <section class="panel control-panel hidden" data-control-panel="settings">
+      <section class="panel control-panel hidden" data-control-panel="areas">
         <div class="panel-heading">
           <h2>エリア管理</h2>
         </div>
@@ -145,6 +132,19 @@
           </div>
         </form>
         <div id="areaManageList" class="area-manage-list"></div>
+      </section>
+
+      <section class="panel control-panel hidden" data-control-panel="settings">
+        <div class="panel-heading">
+          <h2>地図設定</h2>
+        </div>
+        <div class="api-panel">
+          <label for="apiKey">Google Maps APIキー</label>
+          <div class="key-row">
+            <input id="apiKey" type="password" autocomplete="off" placeholder="AIza...">
+            <button id="loadMapBtn" type="button" title="地図を読み込む">読込</button>
+          </div>
+        </div>
       </section>
 
       <section class="panel control-panel hidden" data-control-panel="settings">
@@ -226,6 +226,6 @@
   </template>
 
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-  <script src="app.js?v=20260530-15"></script>
+  <script src="app.js?v=20260530-16"></script>
 </body>
 </html>
