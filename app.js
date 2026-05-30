@@ -1425,6 +1425,29 @@ function stopLineDrawing() {
   drawingLineOverlay = null;
 }
 
+function toggleAreaAssignMode() {
+  const nextAreaMode = !$("#areaAssignBtn").classList.contains("active");
+  stopLineDrawing();
+  areaAssignMode = nextAreaMode && !isMobileViewport();
+  areaSelectionStart = null;
+  isSelectingArea = false;
+  clearAreaSelectionPreview();
+  if (areaAssignMode) {
+    lockMapGestures();
+  } else {
+    unlockMapGestures();
+  }
+  $("#areaAssignBtn").classList.toggle("active", nextAreaMode);
+  $("#areaPanelAssignBtn")?.classList.toggle("active", nextAreaMode);
+  $("#drawLineBtn").classList.remove("active");
+  if (nextAreaMode && isMobileViewport()) {
+    showMobileAreaHint();
+  } else {
+    updateMapModeHint(areaAssignMode ? "エリア指定中: 地図上をドラッグして長方形の範囲を指定してください。" : "");
+  }
+  showControlPanel("areas");
+}
+
 function handleRegisteredAction(action, id) {
   if (action === "details") {
     expandedRegisteredId = expandedRegisteredId === id ? "" : id;
@@ -1621,27 +1644,8 @@ function bindEvents() {
   });
   $("#straightLineBtn").addEventListener("click", () => startLineDrawing("straight"));
   $("#curveLineBtn").addEventListener("click", () => startLineDrawing("curve"));
-  $("#areaAssignBtn").addEventListener("click", () => {
-    const nextAreaMode = !$("#areaAssignBtn").classList.contains("active");
-    stopLineDrawing();
-    areaAssignMode = nextAreaMode && !isMobileViewport();
-    areaSelectionStart = null;
-    isSelectingArea = false;
-    clearAreaSelectionPreview();
-    if (areaAssignMode) {
-      lockMapGestures();
-    } else {
-      unlockMapGestures();
-    }
-    $("#areaAssignBtn").classList.toggle("active", nextAreaMode);
-    $("#drawLineBtn").classList.remove("active");
-    if (nextAreaMode && isMobileViewport()) {
-      showMobileAreaHint();
-    } else {
-      updateMapModeHint(areaAssignMode ? "エリア指定中: 地図上をドラッグして長方形の範囲を指定してください。" : "");
-    }
-    showControlPanel("areas");
-  });
+  $("#areaAssignBtn").addEventListener("click", toggleAreaAssignMode);
+  $("#areaPanelAssignBtn").addEventListener("click", toggleAreaAssignMode);
   $("#nameLabelBtn").addEventListener("click", () => {
     showNameLabels = !showNameLabels;
     localStorage.setItem(LABEL_STORAGE, String(showNameLabels));

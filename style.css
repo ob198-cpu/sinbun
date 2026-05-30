@@ -643,6 +643,11 @@ input[type="color"] {
   margin-top: 12px;
 }
 
+.area-panel-action {
+  width: 100%;
+  margin-top: 8px;
+}
+
 #areaTabsHidden {
   display: none;
 }
