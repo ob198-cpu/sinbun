@@ -471,8 +471,7 @@ function renderAreaControls() {
 function renderRosterList() {
   const list = $("#rosterList");
   if (!list) return;
-  const query = ($("#rosterSearch")?.value || "").trim().toLowerCase();
-  const items = roster.filter(item => !query || `${item.name} ${item.address} ${item.areaName || ""}`.toLowerCase().includes(query));
+  const items = roster;
   list.innerHTML = "";
   if (!items.length) {
     const empty = document.createElement("div");
@@ -1499,7 +1498,6 @@ function bindEvents() {
     saveState();
     renderRosterList();
   });
-  $("#rosterSearch").addEventListener("input", renderRosterList);
   $("#rosterList").addEventListener("click", event => {
     const target = event.target.closest("[data-roster-id]");
     if (!target) return;

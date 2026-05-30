@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>新聞配達マップ共有</title>
-  <link rel="stylesheet" href="style.css?v=20260530-8">
+  <link rel="stylesheet" href="style.css?v=20260530-9">
 </head>
 <body>
   <div class="app-shell">
@@ -101,9 +101,6 @@
             <button id="importRosterFileBtn" type="button">入力用名簿取り込み</button>
             <input id="rosterFileInput" type="file" accept=".xlsx,.xls,.html,.csv,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
           </div>
-          <label>候補検索
-            <input id="rosterSearch" type="search" placeholder="名前・住所で検索">
-          </label>
           <p class="hint-text">候補を地図の家の位置へドラッグすると、その場所に登録できます。</p>
           <div id="rosterList" class="roster-list"></div>
         </div>
@@ -226,6 +223,6 @@
   </template>
 
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-  <script src="app.js?v=20260530-8"></script>
+  <script src="app.js?v=20260530-9"></script>
 </body>
 </html>
