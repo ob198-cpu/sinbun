@@ -330,6 +330,7 @@ input[type="color"] {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .registered-title strong {
@@ -342,6 +343,8 @@ input[type="color"] {
   display: flex;
   flex: 0 0 auto;
   gap: 5px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .registered-quick-actions button {

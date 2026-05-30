@@ -397,7 +397,13 @@ function renderList() {
     placeButton.type = "button";
     placeButton.dataset.action = "place";
     placeButton.textContent = pendingPlaceStopId === stop.id ? "ピン追加中" : "ピン追加";
-    node.querySelector(".card-actions").insertBefore(placeButton, node.querySelector("[data-action='edit']"));
+    const moveButton = document.createElement("button");
+    moveButton.type = "button";
+    moveButton.dataset.action = "move";
+    moveButton.textContent = "移動";
+    const editButton = node.querySelector("[data-action='edit']");
+    node.querySelector(".card-actions").insertBefore(placeButton, editButton);
+    node.querySelector(".card-actions").insertBefore(moveButton, editButton);
 
     node.querySelectorAll("button").forEach(button => {
       button.addEventListener("click", () => {
@@ -409,6 +415,7 @@ function renderList() {
           selectedRosterId = "";
           render();
         }
+        if (action === "move") jumpToStop(stop.id);
         if (["delivered", "missed", "wrong"].includes(action)) setStatus(stop.id, action);
       });
     });
@@ -533,6 +540,7 @@ function renderRegisteredList() {
           <strong>${escapeHtml(stop.customerName)}</strong>
           <div class="registered-quick-actions">
             <button type="button" data-registered-action="place" data-id="${escapeHtml(stop.id)}">${pendingPlaceStopId === stop.id ? "ピン追加中" : "ピン追加"}</button>
+            <button type="button" data-registered-action="move" data-id="${escapeHtml(stop.id)}">移動</button>
             <button type="button" data-registered-action="details" data-id="${escapeHtml(stop.id)}">${expanded ? "閉じる" : "詳細"}</button>
           </div>
         </div>
@@ -1152,6 +1160,24 @@ function jumpToArea(areaId) {
   map.fitBounds(area.bounds, 48);
 }
 
+function jumpToStop(id) {
+  const stop = stops.find(item => item.id === id);
+  if (!stop) return;
+  if (!stop.lat || !stop.lng) {
+    alert("この配達先はまだピン位置が登録されていません。ピン追加で位置を登録してください。");
+    return;
+  }
+  if (!map || !window.google?.maps) {
+    alert("地図の読み込み後にもう一度押してください。");
+    return;
+  }
+  const position = { lat: Number(stop.lat), lng: Number(stop.lng) };
+  map.panTo(position);
+  map.setZoom(Math.max(map.getZoom() || 17, 18));
+  currentAreaId = "all";
+  renderAreaControls();
+}
+
 function markerInfoHtml(stop) {
   const statusInfo = STATUS[stop.status] || STATUS.planned;
   return `
@@ -1391,6 +1417,10 @@ function handleRegisteredAction(action, id) {
     pendingPlaceStopId = id;
     selectedRosterId = "";
     render();
+    return;
+  }
+  if (action === "move") {
+    jumpToStop(id);
     return;
   }
   if (action === "edit") {
