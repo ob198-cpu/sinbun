@@ -60,6 +60,7 @@ let pendingPlaceStopId = "";
 let expandedRegisteredId = "";
 let currentFilter = "all";
 let currentAreaId = "all";
+let currentRosterAreaId = "all";
 let showNameLabels = localStorage.getItem(LABEL_STORAGE) !== "false";
 let drawLineMode = false;
 let drawLineType = "curve";
@@ -424,9 +425,31 @@ function renderList() {
 function render() {
   renderAreaControls();
   renderRosterList();
+  renderRegisteredAreaTabs();
   renderRegisteredList();
   renderStats();
   renderList();
+}
+
+function renderRegisteredAreaTabs() {
+  const tabs = $("#registeredAreaTabs");
+  if (!tabs) return;
+  tabs.innerHTML = "";
+  const allTab = document.createElement("button");
+  allTab.type = "button";
+  allTab.className = `area-tab ${currentRosterAreaId === "all" ? "active" : ""}`;
+  allTab.textContent = `全エリア (${stops.length})`;
+  allTab.dataset.rosterAreaId = "all";
+  tabs.appendChild(allTab);
+  areas.forEach(area => {
+    const tab = document.createElement("button");
+    tab.type = "button";
+    tab.className = `area-tab ${currentRosterAreaId === area.id ? "active" : ""}`;
+    tab.dataset.rosterAreaId = area.id;
+    tab.style.setProperty("--tab-color", area.color);
+    tab.textContent = `${area.name} (${stops.filter(stop => stop.areaId === area.id).length})`;
+    tabs.appendChild(tab);
+  });
 }
 
 function renderAreaControls() {
@@ -515,6 +538,7 @@ function renderRegisteredList() {
   if (!list) return;
   const query = ($("#registeredSearch")?.value || "").trim().toLowerCase();
   const items = stops
+    .filter(stop => currentRosterAreaId === "all" || stop.areaId === currentRosterAreaId)
     .filter(stop => !query || `${stop.customerName} ${stop.address} ${areaById(stop.areaId).name}`.toLowerCase().includes(query))
     .sort((a, b) => Number(a.orderNo) - Number(b.orderNo));
   list.innerHTML = "";
@@ -1487,6 +1511,7 @@ function deleteAreaById(areaId) {
   });
   areas = areas.filter(item => item.id !== areaId);
   if (currentAreaId === areaId) currentAreaId = "all";
+  if (currentRosterAreaId === areaId) currentRosterAreaId = "all";
   saveState();
   render();
   syncMap();
@@ -1502,6 +1527,14 @@ function bindEvents() {
     showControlPanel("new");
   });
   $("#registeredSearch").addEventListener("input", renderRegisteredList);
+  $("#registeredAreaTabs").addEventListener("click", event => {
+    const button = event.target.closest("[data-roster-area-id]");
+    if (!button) return;
+    currentRosterAreaId = button.dataset.rosterAreaId;
+    expandedRegisteredId = "";
+    renderRegisteredAreaTabs();
+    renderRegisteredList();
+  });
   $("#registeredList").addEventListener("click", event => {
     const button = event.target.closest("[data-registered-action]");
     if (!button) return;

@@ -643,6 +643,10 @@ input[type="color"] {
   margin-top: 12px;
 }
 
+.registered-area-tabs {
+  margin: 8px 0 10px;
+}
+
 .area-panel-action {
   width: 100%;
   margin-top: 8px;
