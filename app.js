@@ -342,18 +342,6 @@ function saveAreaBounds(name, boundsValue) {
   jumpToArea(area.id);
 }
 
-function saveVisibleMapArea() {
-  if (!map || !window.google?.maps) return;
-  const visibleBounds = map.getBounds();
-  if (!visibleBounds) {
-    alert("地図の読み込み後にもう一度押してください。");
-    return;
-  }
-  const name = prompt("エリア名を入力してください", `エリア${areas.length + 1}`);
-  if (!name || !name.trim()) return;
-  saveAreaBounds(name.trim(), visibleBounds.toJSON());
-}
-
 function moveStopPosition(id, latLng) {
   const stop = stops.find(item => item.id === id);
   if (!stop) return;
@@ -1346,14 +1334,12 @@ function showMobileAreaHint() {
   if (!hint) return;
   hint.innerHTML = `
     <strong>エリア指定</strong>
-    <span>地図を保存したい範囲に合わせてから押してください。</span>
+    <span>ドラッグで指定を押すと、完了するまでマップを固定します。</span>
     <div class="map-mode-actions">
-      <button id="saveVisibleAreaBtn" type="button">今見えている範囲を保存</button>
       <button id="dragAreaBtn" type="button">ドラッグで指定</button>
     </div>
   `;
   hint.classList.remove("hidden");
-  $("#saveVisibleAreaBtn")?.addEventListener("click", saveVisibleMapArea);
   $("#dragAreaBtn")?.addEventListener("click", () => {
     areaAssignMode = true;
     areaSelectionStart = null;
