@@ -636,6 +636,22 @@ function parseRosterWorkbookText(text) {
   return parseRosterText(text);
 }
 
+function parseRosterWorkbookArrayBuffer(buffer) {
+  if (!window.XLSX) {
+    alert("Excel読込ライブラリを読み込めませんでした。通信状態を確認して、もう一度開き直してください。");
+    return [];
+  }
+  const workbook = XLSX.read(buffer, { type: "array" });
+  const firstSheetName = workbook.SheetNames[0];
+  if (!firstSheetName) return [];
+  const rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], {
+    header: 1,
+    blankrows: false,
+    defval: ""
+  });
+  return rowsToRoster(rows);
+}
+
 function rowsToRoster(rows) {
   return rows
     .filter(cols => !isRosterHeader(cols))
@@ -1504,9 +1520,12 @@ function bindEvents() {
   $("#rosterFileInput").addEventListener("change", event => {
     const file = event.target.files && event.target.files[0];
     if (!file) return;
+    const isRealExcel = /\.xlsx$/i.test(file.name);
     const reader = new FileReader();
     reader.onload = () => {
-      const imported = parseRosterWorkbookText(String(reader.result || ""));
+      const imported = isRealExcel
+        ? parseRosterWorkbookArrayBuffer(reader.result)
+        : parseRosterWorkbookText(String(reader.result || ""));
       if (!imported.length) {
         alert("Excelから名簿を読み込めませんでした。名前と住所を入力してください。");
         return;
@@ -1522,7 +1541,11 @@ function bindEvents() {
       showControlPanel("roster");
       render();
     };
-    reader.readAsText(file, "utf-8");
+    if (isRealExcel) {
+      reader.readAsArrayBuffer(file);
+    } else {
+      reader.readAsText(file, "utf-8");
+    }
     event.target.value = "";
   });
   $("#areaForm").addEventListener("submit", event => {
