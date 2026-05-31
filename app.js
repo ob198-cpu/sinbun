@@ -603,6 +603,7 @@ function renderRosterList() {
     });
     node.addEventListener("dragstart", event => {
       selectedRosterId = item.id;
+      event.dataTransfer.setData("application/x-roster-id", item.id);
       event.dataTransfer.setData("text/plain", item.id);
       event.dataTransfer.effectAllowed = "copy";
       renderRosterList();
@@ -1199,8 +1200,10 @@ function setupMapProjection() {
 function setupMapDrop() {
   const mapNode = $("#map");
   mapNode.addEventListener("dragover", event => {
-    if (!Array.from(event.dataTransfer.types).includes("text/plain")) return;
+    const types = Array.from(event.dataTransfer.types);
+    if (!types.includes("application/x-roster-id") && !types.includes("application/x-stop-id") && !types.includes("text/plain")) return;
     event.preventDefault();
+    event.dataTransfer.dropEffect = types.includes("application/x-stop-id") ? "move" : "copy";
     mapNode.classList.add("drop-ready");
   });
   mapNode.addEventListener("dragleave", () => {
@@ -1209,13 +1212,22 @@ function setupMapDrop() {
   mapNode.addEventListener("drop", event => {
     event.preventDefault();
     mapNode.classList.remove("drop-ready");
-    const rosterId = event.dataTransfer.getData("text/plain") || selectedRosterId;
-    const item = roster.find(entry => entry.id === rosterId);
-    if (!item || !mapProjection) return;
+    if (!mapProjection) return;
     const rect = mapNode.getBoundingClientRect();
     const point = new google.maps.Point(event.clientX - rect.left, event.clientY - rect.top);
     const latLng = mapProjection.fromContainerPixelToLatLng(point);
     if (!latLng) return;
+
+    const stopId = event.dataTransfer.getData("application/x-stop-id");
+    if (stopId && stops.some(stop => stop.id === stopId)) {
+      moveStopPosition(stopId, latLng);
+      draggedRegisteredId = "";
+      return;
+    }
+
+    const rosterId = event.dataTransfer.getData("application/x-roster-id") || event.dataTransfer.getData("text/plain") || selectedRosterId;
+    const item = roster.find(entry => entry.id === rosterId);
+    if (!item) return;
     selectedRosterId = rosterId;
     upsertStop(stopFromRoster(item, { lat: latLng.lat(), lng: latLng.lng() }));
     selectedRosterId = "";
@@ -1712,6 +1724,7 @@ function bindEvents() {
     draggedRegisteredId = row.dataset.stopId;
     row.classList.add("dragging");
     event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("application/x-stop-id", draggedRegisteredId);
     event.dataTransfer.setData("text/plain", draggedRegisteredId);
   });
   $("#registeredList").addEventListener("dragover", event => {
