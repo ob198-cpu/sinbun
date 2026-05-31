@@ -180,8 +180,7 @@ function defaultAreas() {
 }
 
 function currentAreaStops(source = stops) {
-  if (currentAreaId === "all") return source;
-  return source.filter(stop => stop.areaId === currentAreaId);
+  return source;
 }
 
 function ensureAreaByName(name) {
@@ -435,10 +434,10 @@ function moveStopPosition(id, latLng) {
 }
 
 function filteredStops() {
-  const areaStops = currentAreaStops();
-  if (currentFilter === "all") return areaStops;
-  if (currentFilter === "pending") return areaStops.filter(stop => ["planned", "missed", "wrong", "hold"].includes(stop.status));
-  return areaStops.filter(stop => stop.status === currentFilter);
+  const visibleStops = currentAreaStops();
+  if (currentFilter === "all") return visibleStops;
+  if (currentFilter === "pending") return visibleStops.filter(stop => ["planned", "missed", "wrong", "hold"].includes(stop.status));
+  return visibleStops.filter(stop => stop.status === currentFilter);
 }
 
 function renderStats() {
