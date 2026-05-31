@@ -645,6 +645,7 @@ function renderRegisteredList() {
             <button type="button" data-registered-action="place" data-id="${escapeHtml(stop.id)}">${pendingPlaceStopId === stop.id ? "ピン追加中" : "ピン追加"}</button>
             <button type="button" data-registered-action="move" data-id="${escapeHtml(stop.id)}">移動</button>
             <button type="button" data-registered-action="details" data-id="${escapeHtml(stop.id)}">${expanded ? "閉じる" : "詳細"}</button>
+            <button type="button" class="danger" data-registered-action="delete" data-id="${escapeHtml(stop.id)}">削除</button>
           </div>
         </div>
         ${expanded ? `
@@ -1642,6 +1643,12 @@ function handleRegisteredAction(action, id) {
   if (action === "edit") {
     editStop(id);
     showControlPanel("new");
+    return;
+  }
+  if (action === "delete") {
+    const stop = stops.find(item => item.id === id);
+    if (!stop || !confirm(`${stop.customerName} を削除しますか？`)) return;
+    deleteStop(id);
     return;
   }
   if (["delivered", "missed", "wrong"].includes(action)) {
