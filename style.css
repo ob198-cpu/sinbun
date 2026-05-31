@@ -361,6 +361,7 @@ input[type="color"] {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fff;
+  cursor: pointer;
 }
 
 .registered-row.dragging {

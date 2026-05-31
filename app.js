@@ -643,7 +643,6 @@ function renderRegisteredList() {
           <strong>${escapeHtml(stop.customerName)}</strong>
           <div class="registered-quick-actions">
             <button type="button" data-registered-action="place" data-id="${escapeHtml(stop.id)}">${pendingPlaceStopId === stop.id ? "ピン追加中" : "ピン追加"}</button>
-            <button type="button" data-registered-action="move" data-id="${escapeHtml(stop.id)}">移動</button>
             <button type="button" data-registered-action="details" data-id="${escapeHtml(stop.id)}">${expanded ? "閉じる" : "詳細"}</button>
             <button type="button" class="danger" data-registered-action="delete" data-id="${escapeHtml(stop.id)}">削除</button>
           </div>
@@ -1693,8 +1692,14 @@ function bindEvents() {
   });
   $("#registeredList").addEventListener("click", event => {
     const button = event.target.closest("[data-registered-action]");
-    if (!button) return;
-    handleRegisteredAction(button.dataset.registeredAction, button.dataset.id);
+    if (button) {
+      handleRegisteredAction(button.dataset.registeredAction, button.dataset.id);
+      return;
+    }
+    if (event.target.closest("input, select, textarea, [data-drag-handle]")) return;
+    const row = event.target.closest("[data-stop-id]");
+    if (!row) return;
+    jumpToStop(row.dataset.stopId);
   });
   $("#registeredList").addEventListener("change", event => {
     const input = event.target.closest("[data-order-input]");
